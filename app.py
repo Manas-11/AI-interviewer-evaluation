@@ -19,10 +19,10 @@ st.markdown(
     <style>
     .stApp {
         background:
-            radial-gradient(circle at 8% 8%, rgba(102, 126, 234, .22), transparent 28rem),
-            radial-gradient(circle at 92% 18%, rgba(240, 147, 251, .20), transparent 25rem),
-            radial-gradient(circle at 72% 92%, rgba(67, 233, 123, .15), transparent 28rem),
-            linear-gradient(135deg, #f8fbff 0%, #f7f5ff 48%, #f4fffc 100%);
+            radial-gradient(circle at 8% 8%, rgba(91, 110, 225, .42), transparent 28rem),
+            radial-gradient(circle at 92% 18%, rgba(193, 77, 214, .30), transparent 25rem),
+            radial-gradient(circle at 72% 92%, rgba(25, 168, 145, .25), transparent 28rem),
+            linear-gradient(135deg, #dfe9fb 0%, #e8e0f7 48%, #dff4ef 100%);
         background-attachment: fixed;
     }
     .stApp::before {
@@ -115,8 +115,34 @@ st.markdown(
         font-weight: 500;
     }
     .hint {
-        color: #627d98;
+        color: #263f58;
         font-size: .9rem;
+    }
+    .stMarkdown, .stMarkdown p, .stMarkdown li, label,
+    [data-testid="stCaptionContainer"], [data-testid="stWidgetLabel"] p {
+        color: #172b40;
+    }
+    [data-testid="stTextArea"] label, [data-testid="stTextInput"] label {
+        color: #102a43 !important;
+        font-weight: 700 !important;
+    }
+    [data-testid="stTextArea"] textarea {
+        background: rgba(255, 255, 255, .94);
+        color: #102a43 !important;
+        border: 1px solid rgba(16, 42, 67, .24);
+        border-radius: 12px;
+    }
+    [data-testid="stTextArea"] textarea::placeholder {
+        color: #627d98 !important;
+        opacity: 1;
+    }
+    [data-testid="stExpander"] {
+        background: rgba(255, 255, 255, .78);
+        border: 1px solid rgba(16, 42, 67, .15);
+        border-radius: 14px;
+    }
+    [data-testid="stAlert"] p {
+        color: #102a43 !important;
     }
     div[data-testid="stMetric"] {
         background: rgba(255, 255, 255, .82);
