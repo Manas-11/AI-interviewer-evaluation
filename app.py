@@ -92,9 +92,10 @@ st.markdown(
         border: 1px solid rgba(255, 255, 255, .25);
         backdrop-filter: blur(10px);
         border-radius: 16px;
-        padding: 1.15rem 1.25rem;
+        padding: 1.25rem 1.35rem;
         min-height: 132px;
-        box-shadow: 0 6px 18px rgba(16, 42, 67, .05);
+        margin: .35rem .45rem 1.15rem;
+        box-shadow: 0 8px 20px rgba(16, 42, 67, .12);
         transition: transform .2s ease, box-shadow .2s ease;
     }
     .score-card:hover {
@@ -136,6 +137,11 @@ st.markdown(
         background: linear-gradient(90deg, #9ee7dc, #ffffff);
         border-radius: 99px;
         height: 100%;
+    }
+    .criterion-heading {
+        margin-top: 1.8rem;
+        margin-bottom: .8rem;
+        color: #102a43;
     }
     .hint {
         color: #263f58;
@@ -275,7 +281,7 @@ with tab_single:
             summary = st.columns(2)
             summary[0].metric("Overall score", f"{result['total_score']}/{result['maximum_score']}")
             summary[1].metric("Percentage", f"{result['percentage']}%")
-            st.markdown("#### Criterion performance")
+            st.markdown('<h4 class="criterion-heading">Criterion performance</h4>', unsafe_allow_html=True)
             criterion_descriptions = {
                 "correctness": "Technical accuracy and alignment with the expected concepts.",
                 "relevance": "How directly the response addresses the question.",
