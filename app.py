@@ -471,7 +471,7 @@ if generate_clicked:
         st.error(str(error))
     else:
         st.session_state.generated_reference = str(generated["answer"])
-        st.session_state.reference_input = str(generated["answer"])
+        st.session_state[f"reference_input_{form_id}"] = str(generated["answer"])
         if generated.get("warning"):
             st.warning(
                 f"{generated['warning']} Using the local reference generator instead."
@@ -479,13 +479,14 @@ if generate_clicked:
         st.success(f"Reference generated using {generated['source']}.")
         st.rerun()
 
-if "reference_input" not in st.session_state:
-    st.session_state.reference_input = st.session_state.generated_reference
+reference_key = f"reference_input_{form_id}"
+if reference_key not in st.session_state:
+    st.session_state[reference_key] = st.session_state.generated_reference
 reference = st.text_area(
     "Reference answer / expected concepts (generated automatically)",
     height=145,
     help="Generated from the question. You may edit it before scoring.",
-    key="reference_input",
+    key=reference_key,
 )
 should_evaluate = st.button("Evaluate answer", type="primary", use_container_width=True)
 if should_evaluate:
@@ -610,7 +611,6 @@ if should_evaluate:
             )
         st.divider()
         if st.button("Start a new evaluation", use_container_width=True):
-            for key in ("question_input", "candidate_answer_input", "reference_input"):
-                st.session_state.pop(key, None)
-            st.session_state.generated_reference = ""
-            st.rerun()
+                    st.session_state.evaluation_form_id += 1
+                    st.session_state.generated_reference = ""
+                    st.rerun()
