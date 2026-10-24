@@ -1,7 +1,7 @@
 from pydantic import ValidationError
 import pytest
 
-from engine.evaluator import evaluate_answer, evaluate_many
+from engine.evaluator import evaluate_answer, evaluate_answer_with_model, evaluate_many
 from engine.reference import generate_reference_answer
 from evaluation.transcript import process_transcript
 
@@ -41,6 +41,22 @@ def test_score_reasons_explain_deductions():
     assert "Deducted" in result["score_reasons"]["correctness"]
     assert "Deducted" in result["score_reasons"]["completeness"]
     assert "Deducted" in result["score_reasons"]["clarity"]
+
+
+def test_semantic_evaluator_uses_local_baseline_without_api_key(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    baseline = evaluate_answer(
+        "What is caching?",
+        "Caching stores data so later reads are faster.",
+        "Caching stores reusable results to reduce latency.",
+    )
+    result = evaluate_answer_with_model(
+        "What is caching?",
+        "Caching stores data so later reads are faster.",
+        "Caching stores reusable results to reduce latency.",
+    )
+    assert result == baseline
+    assert result["evaluation_source"] == "Local deterministic evaluation"
 
 
 def test_evidence_uses_concept_statements_and_supports_paraphrases():

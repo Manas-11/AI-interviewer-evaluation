@@ -43,6 +43,11 @@ field empty and it will be generated automatically from the question before
 evaluation. Generated text remains editable so an interviewer can correct or
 extend the rubric.
 
+When `OPENAI_API_KEY` is available, evaluation uses semantic model grading to
+recognize accurate paraphrases and compare the candidate's meaning with the
+required concepts. Without a working key, the app clearly labels and uses its
+local deterministic evaluator instead of failing.
+
 After evaluation, the dashboard provides a plain-language performance summary,
 criterion-level deduction explanations, and concept evidence. Use **Start a
 new evaluation** to clear the current form for the next candidate.

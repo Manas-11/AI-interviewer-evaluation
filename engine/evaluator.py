@@ -7,6 +7,8 @@ same interface with an LLM-based evaluator later.
 
 from __future__ import annotations
 
+import json
+import os
 import re
 from collections.abc import Iterable
 from typing import Any
@@ -173,6 +175,7 @@ def evaluate_answer(
             "maximum_score": 40,
             "percentage": 0.0,
             "feedback": ["No answer was provided."],
+            "evaluation_source": "Local deterministic evaluation",
             "score_reasons": {
                 criterion: "No score awarded because no candidate answer was provided."
                 for criterion in _CRITERIA
@@ -221,6 +224,7 @@ def evaluate_answer(
         "maximum_score": 40,
         "percentage": round(total / 40 * 100, 1),
         "feedback": _feedback(scores, candidate_answer, reference_answer),
+        "evaluation_source": "Local deterministic evaluation",
         "score_reasons": score_reasons,
         "matched_concepts": matched,
         "missing_concepts": missing,
@@ -233,3 +237,75 @@ def evaluate_many(
     """Evaluate multiple ``(question, answer, reference)`` tuples."""
 
     return [evaluate_answer(question, answer, reference) for question, answer, reference in answers]
+
+
+def evaluate_answer_with_model(
+    question: str,
+    candidate_answer: str,
+    reference_answer: str,
+) -> dict[str, Any]:
+    """Evaluate meaning with an optional model, falling back to the baseline.
+
+    The model is instructed to award credit for accurate paraphrases and to
+    cite only concepts supported by the candidate response. This keeps the
+    local evaluator available when no provider is configured.
+    """
+
+    baseline = evaluate_answer(question, candidate_answer, reference_answer)
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key or not candidate_answer.strip():
+        return baseline
+    try:
+        from openai import APIError, OpenAI
+
+        response = OpenAI(api_key=api_key).responses.create(
+            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            input=(
+                "Evaluate an interview answer semantically. Give credit for "
+                "accurate paraphrases, not just shared words. Use only evidence "
+                "from the candidate answer and compare it with the question and "
+                "reference answer. Return JSON only with this shape: "
+                '{"scores":{"correctness":0,"relevance":0,"completeness":0,"clarity":0},'
+                '"matched_concepts":[],"missing_concepts":[],"score_reasons":{},'
+                '"feedback":[]}. Scores must be integers from 0 to 10. Concept '
+                "lists must contain complete ideas, not isolated words. "
+                f"Question: {question}\nCandidate answer: {candidate_answer}\n"
+                f"Reference answer: {reference_answer}"
+            ),
+            temperature=0.1,
+            max_output_tokens=700,
+        )
+        parsed = json.loads(response.output_text)
+        scores = parsed["scores"]
+        if set(scores) != set(_CRITERIA) or any(
+            not isinstance(scores[key], int) or not 0 <= scores[key] <= 10
+            for key in _CRITERIA
+        ):
+            return baseline
+        result = {
+            **baseline,
+            "scores": scores,
+            "total_score": sum(scores.values()),
+            "percentage": round(sum(scores.values()) / 40 * 100, 1),
+            "matched_concepts": [
+                item for item in parsed.get("matched_concepts", []) if isinstance(item, str)
+            ],
+            "missing_concepts": [
+                item for item in parsed.get("missing_concepts", []) if isinstance(item, str)
+            ],
+            "score_reasons": {
+                criterion: str(parsed.get("score_reasons", {}).get(criterion, baseline["score_reasons"][criterion]))
+                for criterion in _CRITERIA
+            },
+            "feedback": [
+                item for item in parsed.get("feedback", []) if isinstance(item, str)
+            ] or baseline["feedback"],
+            "evaluation_source": "OpenAI semantic evaluation",
+        }
+        return result
+    except (ImportError, APIError, KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+        baseline["evaluation_warning"] = (
+            "Semantic model evaluation was unavailable, so the local deterministic "
+            "evaluation was used instead."
+        )
+        return baseline

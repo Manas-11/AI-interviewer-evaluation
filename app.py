@@ -7,7 +7,7 @@ import html
 import altair as alt
 import streamlit as st
 
-from engine.evaluator import evaluate_answer
+from engine.evaluator import evaluate_answer_with_model
 from engine.reference import generate_reference_answer
 
 st.set_page_config(page_title="Interview Evaluator", layout="wide")
@@ -512,11 +512,14 @@ if should_evaluate:
             st.info(
                 f"Reference answer generated automatically using {generated['source']}."
             )
-        result = evaluate_answer(question, answer, reference)
+        result = evaluate_answer_with_model(question, answer, reference)
     except (RuntimeError, TypeError, ValueError) as error:
         st.error(str(error))
     else:
+        if result.get("evaluation_warning"):
+            st.warning(result["evaluation_warning"])
         st.markdown("### Evaluation snapshot")
+        st.caption(f"Evaluation method: {result['evaluation_source']}")
         summary_title, summary_text = _performance_summary(result["percentage"])
         st.info(f"**{summary_title}** — {summary_text}")
         summary = st.columns(2)
