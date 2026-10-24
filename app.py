@@ -448,6 +448,10 @@ with st.sidebar:
 
 st.markdown('<div class="workflow-heading">Evaluate a candidate answer</div>', unsafe_allow_html=True)
 st.markdown('<p class="hint">Start with a question. The reference answer can be generated automatically and edited before scoring.</p>', unsafe_allow_html=True)
+if st.button("Start a new evaluation", use_container_width=True):
+    for key in ("question_input", "candidate_answer_input", "reference_input", "generated_reference"):
+        st.session_state.pop(key, None)
+    st.rerun()
 question = st.text_area(
     "Interview question",
     placeholder="e.g. What is dependency injection?",
@@ -486,11 +490,6 @@ with generate_clicked:
             st.rerun()
 with evaluate_clicked:
     should_evaluate = st.button("Evaluate answer", type="primary", use_container_width=True)
-reset_clicked = st.button("Start a new evaluation", use_container_width=True)
-if reset_clicked:
-    for key in ("question_input", "candidate_answer_input", "reference_input", "generated_reference"):
-        st.session_state.pop(key, None)
-    st.rerun()
 if should_evaluate:
     try:
         if not reference.strip():
