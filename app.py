@@ -22,6 +22,8 @@ st.markdown(
             radial-gradient(circle at 92% 18%, rgba(193, 77, 214, .30), transparent 25rem),
             radial-gradient(circle at 72% 92%, rgba(25, 168, 145, .25), transparent 28rem),
             linear-gradient(135deg, #dfe9fb 0%, #e8e0f7 48%, #dff4ef 100%);
+        background-size: 140% 140%;
+        animation: ambient-shift 18s ease-in-out infinite alternate;
         background-attachment: fixed;
         color: #172b40;
     }
@@ -73,6 +75,19 @@ st.markdown(
         bottom: -8rem;
         border: 2rem solid rgba(255, 255, 255, .10);
         border-radius: 50%;
+        animation: float-orb 7s ease-in-out infinite;
+    }
+    .hero::before {
+        content: "";
+        position: absolute;
+        width: 8rem;
+        height: 8rem;
+        right: 16%;
+        top: -5rem;
+        background: rgba(158, 231, 220, .13);
+        border-radius: 50%;
+        filter: blur(1px);
+        animation: float-orb 9s ease-in-out infinite reverse;
     }
     .hero-kicker {
         color: #9ee7dc;
@@ -151,6 +166,8 @@ st.markdown(
         background: linear-gradient(90deg, #9ee7dc, #ffffff);
         border-radius: 99px;
         height: 100%;
+        transform-origin: left;
+        animation: score-grow .75s ease-out both;
     }
     .criterion-heading {
         margin-top: 1.8rem;
@@ -277,6 +294,19 @@ st.markdown(
     }
     [data-testid="stMetric"], .score-card, .evidence-card {
         animation: soft-enter .45s ease both;
+    }
+    @keyframes ambient-shift {
+        0% { background-position: 0% 0%; }
+        50% { background-position: 55% 35%; }
+        100% { background-position: 100% 70%; }
+    }
+    @keyframes float-orb {
+        0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(-10px, 12px, 0) scale(1.06); }
+    }
+    @keyframes score-grow {
+        from { transform: scaleX(0); opacity: .3; }
+        to { transform: scaleX(1); opacity: 1; }
     }
     @keyframes soft-enter {
         from { opacity: 0; transform: translateY(5px); }
