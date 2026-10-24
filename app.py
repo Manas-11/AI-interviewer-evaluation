@@ -235,7 +235,7 @@ with tab_single:
             st.error(str(error))
         else:
             st.markdown("### Evaluation snapshot")
-            summary = st.columns(5)
+            summary = st.columns(2 + len(result["scores"]))
             summary[0].metric("Overall", f"{result['total_score']}/{result['maximum_score']}")
             summary[1].metric("Percentage", f"{result['percentage']}%")
             for index, (criterion, score) in enumerate(result["scores"].items(), start=2):
