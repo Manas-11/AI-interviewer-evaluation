@@ -10,7 +10,7 @@ import streamlit as st
 from engine.evaluator import evaluate_answer
 from engine.reference import generate_reference_answer
 
-st.set_page_config(page_title="Interview Evaluator", page_icon="🎯", layout="wide")
+st.set_page_config(page_title="Interview Evaluator", layout="wide")
 
 st.markdown(
     """
@@ -355,7 +355,7 @@ st.markdown(
     </style>
     <div class="hero">
       <div class="hero-kicker">Interview intelligence · transparent evaluation</div>
-      <h1>🎯 Interview Evaluator</h1>
+      <h1>Interview Evaluator</h1>
       <p>Turn a question and candidate response into clear, evidence-backed feedback in seconds.</p>
     </div>
     """,
@@ -363,7 +363,7 @@ st.markdown(
 )
 
 with st.sidebar:
-    st.markdown("## 🎯 Interview Evaluator")
+    st.markdown("## Interview Evaluator")
     st.caption("A calm, explainable workspace for structured interview review.")
     st.divider()
     st.markdown("### How it works")
@@ -390,7 +390,7 @@ reference = st.text_area(
 )
 generate_clicked, evaluate_clicked = st.columns([1, 1])
 with generate_clicked:
-    if st.button("✨ Generate reference answer", use_container_width=True):
+    if st.button("Generate reference answer", use_container_width=True):
         try:
             generated = generate_reference_answer(question)
         except (RuntimeError, TypeError, ValueError) as error:
@@ -404,7 +404,7 @@ with generate_clicked:
             st.success(f"Reference generated using {generated['source']}.")
             st.rerun()
 with evaluate_clicked:
-    should_evaluate = st.button("🚀 Evaluate answer", type="primary", use_container_width=True)
+    should_evaluate = st.button("Evaluate answer", type="primary", use_container_width=True)
 if should_evaluate:
     try:
         if not reference.strip():
@@ -497,29 +497,29 @@ if should_evaluate:
         st.altair_chart(score_chart, use_container_width=True)
         st.markdown("### Actionable feedback")
         for item in result["feedback"]:
-            st.markdown(f"✅ {item}")
+            st.markdown(f"- {item}")
         with st.expander("Evidence and missing concepts"):
             st.caption("Open this panel for complete evidence. Hover over any concept statement for its interpretation.")
             evidence_left, evidence_right = st.columns(2)
             matched_items = "".join(
-                f'<div class="concept-item"><p>✓ {html.escape(concept)}</p>'
+                f'<div class="concept-item"><p>{html.escape(concept)}</p>'
                 f'<div class="concept-detail">Supported: this idea is reflected in the candidate answer. '
                 f'Hovering reveals the evidence interpretation.</div></div>'
                 for concept in result["matched_concepts"]
             ) or "<p>No supported concept statements found.</p>"
             missing_items = "".join(
-                f'<div class="concept-item"><p>＋ {html.escape(concept)}</p>'
+                f'<div class="concept-item"><p>{html.escape(concept)}</p>'
                 f'<div class="concept-detail">Not supported: this expected idea was not sufficiently '
                 f'found in the candidate answer.</div></div>'
                 for concept in result["missing_concepts"]
             ) or "<p>No missing concept statements.</p>"
             evidence_left.markdown(
                 f'<div class="evidence-card matched-evidence">'
-                f'<h5>✓ Matched concept statements</h5>{matched_items}</div>',
+                f'<h5>Matched concept statements</h5>{matched_items}</div>',
                 unsafe_allow_html=True,
             )
             evidence_right.markdown(
                 f'<div class="evidence-card missing-evidence">'
-                f'<h5>＋ Missing concept statements</h5>{missing_items}</div>',
+                f'<h5>Missing concept statements</h5>{missing_items}</div>',
                 unsafe_allow_html=True,
             )
