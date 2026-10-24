@@ -1,0 +1,5 @@
+README.md
+streamlit>=1.40,<2
+pydantic>=2.7,<3
+pytest>=8,<9
+openai>=1.50,<2

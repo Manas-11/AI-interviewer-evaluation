@@ -1,0 +1,136 @@
+"""Deterministic interview-answer evaluation.
+
+The evaluator intentionally has no network or model dependency. It provides a
+transparent baseline that can be used in production and replaced behind the
+same interface with an LLM-based evaluator later.
+"""
+
+from __future__ import annotations
+
+import re
+from collections.abc import Iterable
+from typing import Any
+
+_TOKEN_RE = re.compile(r"[A-Za-z0-9]+(?:[+#][A-Za-z0-9]+|[.-][A-Za-z0-9]+)*")
+_STOP_WORDS = {
+    "a", "an", "and", "are", "as", "at", "be", "by", "for", "from",
+    "how", "in", "is", "it", "of", "on", "or", "that", "the", "this",
+    "to", "was", "what", "when", "where", "which", "why", "with",
+}
+_CRITERIA = ("correctness", "relevance", "completeness", "clarity")
+
+
+def _validate_text(value: str, name: str) -> str:
+    if not isinstance(value, str):
+        raise TypeError(f"{name} must be a string.")
+    cleaned = value.strip()
+    if not cleaned:
+        raise ValueError(f"{name} cannot be empty.")
+    return cleaned
+
+
+def _tokens(text: str, *, include_stop_words: bool = False) -> set[str]:
+    tokens = {match.group(0).lower() for match in _TOKEN_RE.finditer(text)}
+    if include_stop_words:
+        return tokens
+    return {token for token in tokens if token not in _STOP_WORDS}
+
+
+def _score(value: float) -> int:
+    return max(0, min(10, round(value)))
+
+
+def _overlap(candidate: set[str], reference: set[str]) -> float:
+    if not reference:
+        return 0.0
+    return len(candidate & reference) / len(reference)
+
+
+def _feedback(scores: dict[str, int], answer: str, reference: str) -> list[str]:
+    feedback: list[str] = []
+    if scores["correctness"] >= 8:
+        feedback.append("The answer includes terminology aligned with the reference.")
+    else:
+        feedback.append("Add the core concepts and technical terms expected for this question.")
+    if scores["completeness"] < 7:
+        feedback.append("Cover more of the reference concepts, including the reasoning behind them.")
+    if scores["relevance"] < 7:
+        feedback.append("Answer the question more directly and remove unrelated detail.")
+    if scores["clarity"] < 7:
+        feedback.append("Use complete sentences and a concise structure: claim, explanation, and example.")
+    if len(answer.split()) > max(80, len(reference.split()) * 4):
+        feedback.append("Keep the response focused; it is substantially longer than the reference.")
+    return feedback
+
+
+def evaluate_answer(
+    question: str,
+    candidate_answer: str,
+    reference_answer: str,
+) -> dict[str, Any]:
+    """Score one answer from 0-10 across four explainable criteria.
+
+    This is a lexical baseline, not a claim of human-level semantic judgment.
+    Scores are bounded integers and the result is JSON serializable.
+    """
+
+    question = _validate_text(question, "Question")
+    candidate_answer = candidate_answer.strip() if isinstance(candidate_answer, str) else candidate_answer
+    reference_answer = _validate_text(reference_answer, "Reference answer")
+    if not isinstance(candidate_answer, str):
+        raise TypeError("Candidate answer must be a string.")
+    if not candidate_answer:
+        scores = {criterion: 0 for criterion in _CRITERIA}
+        return {
+            "scores": scores,
+            "total_score": 0,
+            "maximum_score": 40,
+            "percentage": 0.0,
+            "feedback": ["No answer was provided."],
+            "matched_concepts": [],
+            "missing_concepts": sorted(_tokens(reference_answer)),
+        }
+
+    candidate_tokens = _tokens(candidate_answer)
+    reference_tokens = _tokens(reference_answer)
+    question_tokens = _tokens(question)
+    matched = sorted(candidate_tokens & reference_tokens)
+    missing = sorted(reference_tokens - candidate_tokens)
+
+    concept_coverage = _overlap(candidate_tokens, reference_tokens)
+    question_coverage = _overlap(candidate_tokens, question_tokens)
+    has_structure = len(re.findall(r"[.!?]", candidate_answer)) > 0
+    word_count = len(candidate_answer.split())
+
+    correctness = _score(concept_coverage * 10)
+    relevance = _score((question_coverage * 0.65 + concept_coverage * 0.35) * 10)
+    completeness = _score(concept_coverage * 10)
+    clarity = _score(
+        10 if word_count >= 8 and has_structure else
+        7 if word_count >= 5 else
+        4 if word_count >= 2 else 2
+    )
+    scores = {
+        "correctness": correctness,
+        "relevance": relevance,
+        "completeness": completeness,
+        "clarity": clarity,
+    }
+    total = sum(scores.values())
+    return {
+        "scores": scores,
+        "total_score": total,
+        "maximum_score": 40,
+        "percentage": round(total / 40 * 100, 1),
+        "feedback": _feedback(scores, candidate_answer, reference_answer),
+        "matched_concepts": matched,
+        "missing_concepts": missing,
+    }
+
+
+def evaluate_many(
+    answers: Iterable[tuple[str, str, str]],
+) -> list[dict[str, Any]]:
+    """Evaluate multiple ``(question, answer, reference)`` tuples."""
+
+    return [evaluate_answer(question, answer, reference) for question, answer, reference in answers]

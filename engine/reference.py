@@ -1,0 +1,104 @@
+"""Reference-answer generation with an optional hosted model and local fallback."""
+
+from __future__ import annotations
+
+import os
+import re
+from typing import Any
+
+
+def _clean_question(question: str) -> str:
+    if not isinstance(question, str) or not question.strip():
+        raise ValueError("Question cannot be empty.")
+    return question.strip()
+
+
+def _local_reference(question: str) -> str:
+    """Create a useful rubric when no model credentials are available."""
+
+    normalized = question.lower()
+    known_answers = {
+        "list and tuple": (
+            "A list is a mutable, ordered collection, while a tuple is an "
+            "immutable, ordered collection. Lists use square brackets and "
+            "support updates; tuples use parentheses and are suitable for "
+            "fixed data. Both preserve order and can contain duplicate values."
+        ),
+        "dependency injection": (
+            "Dependency injection supplies a class or function with its "
+            "dependencies from outside instead of constructing them internally. "
+            "This reduces coupling, improves testability, and makes "
+            "implementations replaceable."
+        ),
+        "duplicate payment": (
+            "Use an idempotency key supplied by the client and enforce a "
+            "unique constraint for it in durable storage. Process the request "
+            "transactionally, save the first result, and return that same "
+            "result for retries. Handle concurrent requests safely."
+        ),
+        "caching": (
+            "Caching stores frequently or expensively computed data closer to "
+            "the consumer so later reads are faster. A good answer should "
+            "discuss cache keys, TTL or invalidation, stale data, capacity, "
+            "and the trade-off between latency and consistency."
+        ),
+    }
+    for phrase, answer in known_answers.items():
+        if phrase in normalized:
+            return answer
+
+    question_terms = re.findall(r"[A-Za-z][A-Za-z0-9+#.-]{2,}", question)
+    topics = ", ".join(dict.fromkeys(question_terms[:8])) or "the requested topic"
+    return (
+        f"A strong answer to this question should define {topics}, explain how "
+        "it works, and connect it to the question's practical context. It "
+        "should mention the main benefits, limitations or trade-offs, and "
+        "include a concise example where appropriate. Evaluate the candidate "
+        "on technical accuracy, directness, completeness, and clarity."
+    )
+
+
+def _openai_reference(question: str) -> str | None:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        return None
+    try:
+        from openai import OpenAI
+
+        client = OpenAI(api_key=api_key)
+        response: Any = client.responses.create(
+            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            input=(
+                "Create a concise, technically accurate reference answer for "
+                "an interview evaluator. Include the essential concepts, "
+                "trade-offs, and an example when relevant. Do not grade the "
+                f"candidate. Question: {question}"
+            ),
+            temperature=0.2,
+            max_output_tokens=300,
+        )
+        answer = response.output_text.strip()
+        return answer or None
+    except Exception as error:
+        raise RuntimeError(
+            "Reference generation failed while calling the configured model."
+        ) from error
+
+
+def generate_reference_answer(question: str) -> dict[str, str | bool]:
+    """Generate a reference answer from a question.
+
+    Returns the answer and whether it came from a hosted model. The local
+    fallback is intentionally explicit so users can distinguish it from
+    model-generated content.
+    """
+
+    question = _clean_question(question)
+    generated = _openai_reference(question)
+    if generated:
+        return {"answer": generated, "source": "OpenAI", "is_model_generated": True}
+    return {
+        "answer": _local_reference(question),
+        "source": "Local fallback",
+        "is_model_generated": False,
+    }
