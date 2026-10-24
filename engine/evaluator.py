@@ -321,12 +321,18 @@ def evaluate_answer_with_model(
     """
 
     baseline = evaluate_answer(question, candidate_answer, reference_answer)
-    if os.getenv("GEMINI_API_KEY") and candidate_answer.strip():
+    api_key = os.getenv("OPENAI_API_KEY")
+    if api_key and candidate_answer.strip():
         try:
-            raw = gemini_generate(
-                _semantic_evaluation_prompt(question, candidate_answer, reference_answer)
+            from openai import APIError, OpenAI
+
+            response = OpenAI(api_key=api_key, timeout=12.0, max_retries=0).responses.create(
+                model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+                input=_semantic_evaluation_prompt(question, candidate_answer, reference_answer),
+                temperature=0.1,
+                max_output_tokens=700,
             )
-            parsed = json.loads(raw.strip().removeprefix("```json").removesuffix("```").strip())
+            parsed = json.loads(response.output_text)
             scores = parsed["scores"]
             if set(scores) != set(_CRITERIA) or any(
                 not isinstance(scores[key], int) or not 0 <= scores[key] <= 10
@@ -349,56 +355,25 @@ def evaluate_answer_with_model(
                 },
                 "feedback": [x for x in parsed.get("feedback", []) if isinstance(x, str)]
                     or baseline["feedback"],
-                "evaluation_source": "Gemini semantic evaluation",
+                "evaluation_source": "OpenAI semantic evaluation",
             }
+        except (ImportError, APIError, KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+            baseline["evaluation_warning"] = (
+                f"OpenAI semantic evaluation was unavailable ({error}); "
+                "the local meaning-aware evaluation was used instead."
+            )
+            return baseline
+    if os.getenv("GEMINI_API_KEY") and candidate_answer.strip():
+        try:
+            raw = gemini_generate(_semantic_evaluation_prompt(question, candidate_answer, reference_answer))
+            parsed = json.loads(raw.strip().removeprefix("```json").removesuffix("```").strip())
+            scores = parsed["scores"]
+            if set(scores) != set(_CRITERIA):
+                raise ValueError("Gemini returned invalid scores.")
+            total = sum(scores.values())
+            return {**baseline, "scores": scores, "total_score": total,
+                    "percentage": round(total / 40 * 100, 1),
+                    "evaluation_source": "Gemini semantic evaluation"}
         except (RuntimeError, KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
             baseline["evaluation_warning"] = f"{error} The local meaning-aware evaluation was used instead."
-            return baseline
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key or not candidate_answer.strip():
-        return baseline
-    try:
-        from openai import APIError, OpenAI
-
-        response = OpenAI(api_key=api_key, timeout=12.0, max_retries=0).responses.create(
-            model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
-            input=(
-                _semantic_evaluation_prompt(question, candidate_answer, reference_answer)
-            ),
-            temperature=0.1,
-            max_output_tokens=700,
-        )
-        parsed = json.loads(response.output_text)
-        scores = parsed["scores"]
-        if set(scores) != set(_CRITERIA) or any(
-            not isinstance(scores[key], int) or not 0 <= scores[key] <= 10
-            for key in _CRITERIA
-        ):
-            return baseline
-        result = {
-            **baseline,
-            "scores": scores,
-            "total_score": sum(scores.values()),
-            "percentage": round(sum(scores.values()) / 40 * 100, 1),
-            "matched_concepts": [
-                item for item in parsed.get("matched_concepts", []) if isinstance(item, str)
-            ],
-            "missing_concepts": [
-                item for item in parsed.get("missing_concepts", []) if isinstance(item, str)
-            ],
-            "score_reasons": {
-                criterion: str(parsed.get("score_reasons", {}).get(criterion, baseline["score_reasons"][criterion]))
-                for criterion in _CRITERIA
-            },
-            "feedback": [
-                item for item in parsed.get("feedback", []) if isinstance(item, str)
-            ] or baseline["feedback"],
-            "evaluation_source": "OpenAI semantic evaluation",
-        }
-        return result
-    except (ImportError, APIError, KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
-        baseline["evaluation_warning"] = (
-            "Semantic model evaluation was unavailable, so the local meaning-aware "
-            "evaluation was used instead."
-        )
-        return baseline
+    return baseline

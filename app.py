@@ -18,16 +18,6 @@ st.set_page_config(page_title="Interview Evaluator", layout="wide")
 def _load_openai_settings() -> bool:
     """Load hosted-model settings from Streamlit secrets without exposing keys."""
 
-    try:
-        secret_key = st.secrets.get("GEMINI_API_KEY")
-        if secret_key:
-            os.environ["GEMINI_API_KEY"] = str(secret_key).strip()
-            secret_model = st.secrets.get("GEMINI_MODEL")
-            if secret_model:
-                os.environ["GEMINI_MODEL"] = str(secret_model).strip()
-            return True
-    except StreamlitSecretNotFoundError:
-        pass
     if os.getenv("OPENAI_API_KEY"):
         return True
     try:
@@ -37,6 +27,16 @@ def _load_openai_settings() -> bool:
             secret_model = st.secrets.get("OPENAI_MODEL")
             if secret_model:
                 os.environ["OPENAI_MODEL"] = str(secret_model).strip()
+            return True
+    except StreamlitSecretNotFoundError:
+        pass
+    try:
+        secret_key = st.secrets.get("GEMINI_API_KEY")
+        if secret_key:
+            os.environ["GEMINI_API_KEY"] = str(secret_key).strip()
+            secret_model = st.secrets.get("GEMINI_MODEL")
+            if secret_model:
+                os.environ["GEMINI_MODEL"] = str(secret_model).strip()
             return True
     except StreamlitSecretNotFoundError:
         return False
@@ -475,12 +475,12 @@ st.markdown(
 if model_configured:
     st.caption(
         "Semantic model grading is configured "
-        f"({os.getenv('GEMINI_MODEL', os.getenv('OPENAI_MODEL', 'gemini-3.8-flash'))})."
+        f"({os.getenv('OPENAI_MODEL', os.getenv('GEMINI_MODEL', 'gpt-4o-mini'))})."
     )
 else:
     st.info(
-        "Semantic model grading is not configured. Add GEMINI_API_KEY or "
-        "OPENAI_API_KEY to Streamlit Secrets; local meaning-aware grading remains available."
+        "Semantic model grading is not configured. Add OPENAI_API_KEY to "
+        "Streamlit Secrets; local meaning-aware grading remains available."
     )
 
 with st.sidebar:
@@ -565,10 +565,6 @@ if should_evaluate:
             )
         st.markdown("### Evaluation snapshot")
         st.caption(f"Evaluation method: {result['evaluation_source']}")
-        st.caption(
-            "The candidate response is compared with the reference by meaning "
-            "and required concepts, not by exact wording."
-        )
         summary_title, summary_text = _performance_summary(result["percentage"])
         st.info(f"**{summary_title}** — {summary_text}")
         summary = st.columns(2)

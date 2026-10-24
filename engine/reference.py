@@ -109,43 +109,33 @@ def generate_reference_answer(question: str) -> dict[str, str | bool]:
     """
 
     question = _clean_question(question)
+    if os.getenv("OPENAI_API_KEY"):
+        try:
+            answer = _openai_reference(question)
+            if answer:
+                return {"answer": answer, "source": "OpenAI", "is_model_generated": True}
+        except RuntimeError as error:
+            openai_warning = str(error)
+        else:
+            openai_warning = "OpenAI returned an empty answer."
+    else:
+        openai_warning = ""
     if os.getenv("GEMINI_API_KEY"):
         try:
             answer = _gemini_reference(question)
             return {"answer": answer, "source": "Gemini", "is_model_generated": True}
         except RuntimeError as error:
             gemini_warning = str(error)
-            if os.getenv("OPENAI_API_KEY"):
-                try:
-                    answer = _openai_reference(question)
-                    if answer:
-                        return {
-                            "answer": answer,
-                            "source": "OpenAI",
-                            "is_model_generated": True,
-                            "warning": f"Gemini unavailable: {gemini_warning}",
-                        }
-                except RuntimeError:
-                    pass
-            return {
-                "answer": _local_reference(question),
-                "source": "Local fallback",
-                "is_model_generated": False,
-                "warning": f"Gemini unavailable: {gemini_warning}",
-            }
-    try:
-        generated = _openai_reference(question)
-    except RuntimeError as error:
-        return {
-            "answer": _local_reference(question),
-            "source": "Local fallback",
-            "is_model_generated": False,
-            "warning": str(error),
-        }
-    if generated:
-        return {"answer": generated, "source": "OpenAI", "is_model_generated": True}
-    return {
+            warning = f"OpenAI unavailable: {openai_warning}; Gemini unavailable: {gemini_warning}"
+        else:
+            warning = f"OpenAI unavailable: {openai_warning}"
+    else:
+        warning = f"OpenAI unavailable: {openai_warning}" if openai_warning else ""
+    fallback = {
         "answer": _local_reference(question),
         "source": "Local fallback",
         "is_model_generated": False,
     }
+    if warning:
+        fallback["warning"] = warning
+    return fallback

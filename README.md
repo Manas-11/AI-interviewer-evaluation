@@ -4,8 +4,8 @@ A deployable Streamlit application for evaluating interview answers with a
 transparent, deterministic scoring baseline. It validates transcript data with
 Pydantic and scores answers across correctness, relevance, completeness, and
 clarity (0–10 each), while exposing matched and missing concepts as evidence.
-Reference answers are generated automatically from the question. If `GEMINI_API_KEY` or `OPENAI_API_KEY` is configured, the app uses the selected
-hosted model; otherwise it uses a deterministic local fallback.
+Reference answers are generated automatically from the question. If `OPENAI_API_KEY` is configured, the app uses OpenAI first. Gemini is an
+optional secondary provider; otherwise it uses a deterministic local fallback.
 
 The dashboard is focused on the primary workflow: evaluating one question and
 one candidate answer at a time. Transcript validation remains available in the
@@ -62,9 +62,8 @@ extend the rubric.
 
 The local meaning-aware evaluator is always available and evaluates concept
 coverage using phrase aliases, synonyms, fuzzy matching, and reference-derived
-concept statements. When `OPENAI_API_KEY` is available, optional model grading
-can provide an additional semantic pass; an unavailable model never prevents
-the local evaluation from completing.
+concept statements. OpenAI provides the primary semantic pass, Gemini is optional, and an
+unavailable hosted model never prevents local evaluation from completing.
 
 After evaluation, the dashboard provides a plain-language performance summary,
 criterion-level deduction explanations, and concept evidence. Use **Start a
