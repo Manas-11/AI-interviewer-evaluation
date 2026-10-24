@@ -18,6 +18,24 @@ _STOP_WORDS = {
     "to", "was", "what", "when", "where", "which", "why", "with",
 }
 _CRITERIA = ("correctness", "relevance", "completeness", "clarity")
+_SYNONYMS = {
+    "changeable": "mutable",
+    "changes": "mutable",
+    "change": "mutable",
+    "fixed": "immutable",
+    "unchangeable": "immutable",
+    "external": "outside",
+    "externally": "outside",
+    "provided": "supply",
+    "provides": "supply",
+    "supplies": "supply",
+    "dependencies": "dependency",
+    "classes": "class",
+    "functions": "function",
+    "faster": "latency",
+    "speed": "latency",
+    "retries": "retry",
+}
 
 
 def _validate_text(value: str, name: str) -> str:
@@ -31,9 +49,30 @@ def _validate_text(value: str, name: str) -> str:
 
 def _tokens(text: str, *, include_stop_words: bool = False) -> set[str]:
     tokens = {match.group(0).lower() for match in _TOKEN_RE.finditer(text)}
+    tokens = {_SYNONYMS.get(token, token) for token in tokens}
     if include_stop_words:
         return tokens
     return {token for token in tokens if token not in _STOP_WORDS}
+
+
+def _concepts(text: str) -> list[str]:
+    """Extract meaningful concept statements, rather than individual words."""
+
+    chunks = re.split(r"(?<=[.!?;])\s+|,\s+(?=(?:and|while|whereas|because|which)\b)", text.strip())
+    concepts: list[str] = []
+    for chunk in chunks:
+        cleaned = chunk.strip(" .;,:")
+        if len(_tokens(cleaned)) >= 2 and cleaned.lower() not in concepts:
+            concepts.append(cleaned)
+    return concepts
+
+
+def _concept_is_supported(concept: str, candidate_tokens: set[str]) -> bool:
+    concept_tokens = _tokens(concept)
+    if not concept_tokens:
+        return False
+    overlap = len(concept_tokens & candidate_tokens) / len(concept_tokens)
+    return overlap >= 0.6 or (overlap >= 0.5 and len(concept_tokens & candidate_tokens) >= 3)
 
 
 def _score(value: float) -> int:
@@ -94,8 +133,15 @@ def evaluate_answer(
     candidate_tokens = _tokens(candidate_answer)
     reference_tokens = _tokens(reference_answer)
     question_tokens = _tokens(question)
-    matched = sorted(candidate_tokens & reference_tokens)
-    missing = sorted(reference_tokens - candidate_tokens)
+    reference_concepts = _concepts(reference_answer) or [reference_answer]
+    matched = [
+        concept for concept in reference_concepts
+        if _concept_is_supported(concept, candidate_tokens)
+    ]
+    missing = [
+        concept for concept in reference_concepts
+        if concept not in matched
+    ]
 
     concept_coverage = _overlap(candidate_tokens, reference_tokens)
     question_coverage = _overlap(candidate_tokens, question_tokens)

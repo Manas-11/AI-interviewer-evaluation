@@ -360,9 +360,9 @@ with tab_single:
                 st.markdown(f"✅ {item}")
             with st.expander("Evidence and missing concepts"):
                 evidence_left, evidence_right = st.columns(2)
-                evidence_left.markdown("**Matched concepts**")
+                evidence_left.markdown("**Matched concept statements**")
                 evidence_left.info(", ".join(result["matched_concepts"]) or "None")
-                evidence_right.markdown("**Missing concepts**")
+                evidence_right.markdown("**Missing concept statements**")
                 evidence_right.warning(", ".join(result["missing_concepts"]) or "None")
 
 with tab_transcript:

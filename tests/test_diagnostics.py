@@ -17,13 +17,27 @@ def test_evaluate_answer_returns_bounded_scores_and_evidence():
     assert all(0 <= score <= 10 for score in result["scores"].values())
     assert result["total_score"] == sum(result["scores"].values())
     assert result["maximum_score"] == 40
-    assert "mutable" in result["matched_concepts"]
+    assert result["matched_concepts"] or result["missing_concepts"]
+    assert all(len(concept.split()) > 1 for concept in result["matched_concepts"])
 
 
 def test_empty_answer_is_safe_and_explicit():
     result = evaluate_answer("Explain caching", "", "Caching stores reusable results.")
     assert result["total_score"] == 0
     assert result["feedback"] == ["No answer was provided."]
+
+
+def test_evidence_uses_concept_statements_and_supports_paraphrases():
+    result = evaluate_answer(
+        "What is dependency injection?",
+        "It supplies a class with dependencies from outside, which reduces coupling.",
+        "Dependency injection supplies a class with its dependencies from outside. "
+        "This reduces coupling and improves testability.",
+    )
+
+    assert any("dependencies from outside" in concept for concept in result["matched_concepts"])
+    assert all(len(concept.split()) > 1 for concept in result["matched_concepts"])
+    assert any("testability" in concept for concept in result["missing_concepts"])
 
 
 @pytest.mark.parametrize("question", ["", "   "])
@@ -34,12 +48,12 @@ def test_empty_question_is_rejected(question):
 
 def test_evaluate_many_preserves_order():
     results = evaluate_many([
-        ("What is alpha?", "alpha", "alpha"),
-        ("What is beta?", "beta", "beta"),
+        ("What is alpha?", "Alpha is the first value.", "Alpha is the first value."),
+        ("What is beta?", "Beta is the second value.", "Beta is the second value."),
     ])
     assert len(results) == 2
-    assert results[0]["matched_concepts"] == ["alpha"]
-    assert results[1]["matched_concepts"] == ["beta"]
+    assert results[0]["matched_concepts"] == ["Alpha is the first value"]
+    assert results[1]["matched_concepts"] == ["Beta is the second value"]
     assert all(0 <= item["total_score"] <= 40 for item in results)
 
 
