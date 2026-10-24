@@ -213,30 +213,30 @@ st.markdown(
         border-top: 0;
     }
     .concept-detail {
-        color: rgba(255, 255, 255, .82);
+        color: rgba(16, 59, 74, .82);
         display: block;
         font-size: .78rem;
         line-height: 1.35;
         margin-top: .25rem;
     }
     .concept-item:hover .concept-detail {
-        color: #ffffff;
+        color: #102a43;
     }
     .matched-evidence {
-        background: linear-gradient(145deg, #102a43 0%, #176b87 100%);
-        border: 1px solid rgba(158, 231, 220, .55);
-        color: #effffc;
+        background: linear-gradient(145deg, #5ba9b2 0%, #75c5bf 100%);
+        border: 1px solid rgba(255, 255, 255, .7);
+        color: #103b4a;
     }
     .matched-evidence h5 {
-        color: #9ee7dc;
+        color: #103b4a;
     }
     .missing-evidence {
-        background: linear-gradient(145deg, #173f5f 0%, #206b82 100%);
-        border: 1px solid rgba(158, 231, 220, .4);
-        color: #effffc;
+        background: linear-gradient(145deg, #7399c4 0%, #8bb8d2 100%);
+        border: 1px solid rgba(255, 255, 255, .72);
+        color: #173b58;
     }
     .missing-evidence h5 {
-        color: #bcebe7;
+        color: #173b58;
     }
     [data-testid="stAlert"] p {
         color: #102a43 !important;
