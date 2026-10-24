@@ -34,7 +34,7 @@ To enable higher-quality model-generated reference answers with Gemini, set:
 
 ```powershell
 $env:GEMINI_API_KEY = "your-Gemini-api-key"
-$env:GEMINI_MODEL = "gemini-2.5-flash"
+$env:GEMINI_MODEL = "gemini-3.8-flash"
 ```
 
 For Streamlit Community Cloud, open **App settings → Secrets** and add TOML
@@ -42,7 +42,7 @@ entries (do not commit this value to the repository):
 
 ```toml
 GEMINI_API_KEY = "your-gemini-api-key"
-GEMINI_MODEL = "gemini-2.5-flash"
+GEMINI_MODEL = "gemini-3.8-flash"
 ```
 
 After saving the secrets, restart the app. The dashboard will show

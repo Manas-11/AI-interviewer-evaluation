@@ -475,7 +475,7 @@ st.markdown(
 if model_configured:
     st.caption(
         "Semantic model grading is configured "
-        f"({os.getenv('GEMINI_MODEL', os.getenv('OPENAI_MODEL', 'gemini-2.5-flash'))})."
+        f"({os.getenv('GEMINI_MODEL', os.getenv('OPENAI_MODEL', 'gemini-3.8-flash'))})."
     )
 else:
     st.info(
