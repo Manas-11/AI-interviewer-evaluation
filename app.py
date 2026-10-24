@@ -18,18 +18,47 @@ st.markdown(
     """
     <style>
     .stApp {
-        background: #f7f9fc;
+        background:
+            radial-gradient(circle at 8% 8%, rgba(102, 126, 234, .22), transparent 28rem),
+            radial-gradient(circle at 92% 18%, rgba(240, 147, 251, .20), transparent 25rem),
+            radial-gradient(circle at 72% 92%, rgba(67, 233, 123, .15), transparent 28rem),
+            linear-gradient(135deg, #f8fbff 0%, #f7f5ff 48%, #f4fffc 100%);
+        background-attachment: fixed;
+    }
+    .stApp::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        opacity: .22;
+        background-image: radial-gradient(rgba(16, 42, 67, .15) .7px, transparent .7px);
+        background-size: 18px 18px;
+        mask-image: linear-gradient(to bottom, black, transparent 78%);
     }
     [data-testid="stHeader"] {
         background: transparent;
     }
     .hero {
+        position: relative;
+        overflow: hidden;
         padding: 2.2rem 2.4rem;
         border-radius: 24px;
-        background: linear-gradient(120deg, #102a43 0%, #176b87 55%, #35b5a5 100%);
+        background:
+            radial-gradient(circle at 88% 10%, rgba(255, 255, 255, .25), transparent 11rem),
+            linear-gradient(120deg, #102a43 0%, #176b87 55%, #35b5a5 100%);
         color: white;
         box-shadow: 0 14px 35px rgba(16, 42, 67, .16);
         margin-bottom: 1.6rem;
+    }
+    .hero::after {
+        content: "";
+        position: absolute;
+        width: 14rem;
+        height: 14rem;
+        right: -4rem;
+        bottom: -8rem;
+        border: 2rem solid rgba(255, 255, 255, .10);
+        border-radius: 50%;
     }
     .hero-kicker {
         color: #9ee7dc;
@@ -50,16 +79,18 @@ st.markdown(
         max-width: 720px;
     }
     .section-card {
-        background: white;
-        border: 1px solid #e3eaf1;
+        background: rgba(255, 255, 255, .78);
+        border: 1px solid rgba(255, 255, 255, .85);
+        backdrop-filter: blur(12px);
         border-radius: 18px;
         padding: 1.2rem 1.35rem .8rem;
         box-shadow: 0 8px 24px rgba(16, 42, 67, .05);
         margin-bottom: 1rem;
     }
     .score-card {
-        background: white;
-        border: 1px solid #e3eaf1;
+        background: rgba(255, 255, 255, .84);
+        border: 1px solid rgba(255, 255, 255, .9);
+        backdrop-filter: blur(10px);
         border-radius: 16px;
         padding: 1rem 1.1rem;
         min-height: 94px;
@@ -88,11 +119,21 @@ st.markdown(
         font-size: .9rem;
     }
     div[data-testid="stMetric"] {
-        background: white;
-        border: 1px solid #e3eaf1;
+        background: rgba(255, 255, 255, .82);
+        border: 1px solid rgba(255, 255, 255, .9);
+        backdrop-filter: blur(10px);
         border-radius: 16px;
         padding: 1rem 1.2rem;
         box-shadow: 0 6px 18px rgba(16, 42, 67, .05);
+    }
+    div[data-baseweb="tab-list"] {
+        gap: .5rem;
+        background: rgba(255, 255, 255, .55);
+        border-radius: 14px;
+        padding: .3rem;
+    }
+    button[data-baseweb="tab"] {
+        border-radius: 10px;
     }
     </style>
     <div class="hero">
