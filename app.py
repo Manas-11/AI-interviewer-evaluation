@@ -189,7 +189,15 @@ st.markdown(
     }
     [data-testid="stTextArea"] label, [data-testid="stTextInput"] label {
         color: #102a43 !important;
-        font-weight: 700 !important;
+        font-size: 1.08rem !important;
+        font-weight: 800 !important;
+        letter-spacing: .01em;
+        line-height: 1.35 !important;
+        margin-bottom: .35rem !important;
+    }
+    [data-testid="stTextArea"] label p {
+        font-size: 1.08rem !important;
+        font-weight: 800 !important;
     }
     [data-testid="stTextArea"] textarea {
         background: rgba(255, 255, 255, .94);
