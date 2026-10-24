@@ -114,11 +114,24 @@ def generate_reference_answer(question: str) -> dict[str, str | bool]:
             answer = _gemini_reference(question)
             return {"answer": answer, "source": "Gemini", "is_model_generated": True}
         except RuntimeError as error:
+            gemini_warning = str(error)
+            if os.getenv("OPENAI_API_KEY"):
+                try:
+                    answer = _openai_reference(question)
+                    if answer:
+                        return {
+                            "answer": answer,
+                            "source": "OpenAI",
+                            "is_model_generated": True,
+                            "warning": f"Gemini unavailable: {gemini_warning}",
+                        }
+                except RuntimeError:
+                    pass
             return {
                 "answer": _local_reference(question),
                 "source": "Local fallback",
                 "is_model_generated": False,
-                "warning": str(error),
+                "warning": f"Gemini unavailable: {gemini_warning}",
             }
     try:
         generated = _openai_reference(question)

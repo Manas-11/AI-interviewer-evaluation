@@ -20,7 +20,7 @@ def gemini_generate(prompt: str) -> str:
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY is not configured.")
-    configured_model = os.getenv("GEMINI_MODEL", "").strip()
+    configured_model = os.getenv("GEMINI_MODEL", "").strip().removeprefix("models/")
     models = _available_gemini_models(api_key, configured_model)
     payload = json.dumps({
         "contents": [{"parts": [{"text": prompt}]}],
@@ -36,10 +36,10 @@ def gemini_generate(prompt: str) -> str:
         try:
             with urlopen(request, timeout=45) as response:
                 data = json.loads(response.read().decode("utf-8"))
-            text = data["candidates"][0]["content"]["parts"][0]["text"].strip()
-            if not text:
-                raise RuntimeError("Gemini returned an empty response.")
-            return text
+            answer = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            if not answer:
+                raise RuntimeError(f"Gemini returned an empty response for {model}.")
+            return answer
         except HTTPError as error:
             try:
                 detail = error.read().decode("utf-8")[:300]
