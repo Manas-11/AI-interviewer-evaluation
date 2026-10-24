@@ -92,9 +92,14 @@ st.markdown(
         border: 1px solid rgba(255, 255, 255, .25);
         backdrop-filter: blur(10px);
         border-radius: 16px;
-        padding: 1rem 1.1rem;
-        min-height: 94px;
+        padding: 1.15rem 1.25rem;
+        min-height: 132px;
         box-shadow: 0 6px 18px rgba(16, 42, 67, .05);
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .score-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 26px rgba(16, 42, 67, .18);
     }
     .score-name {
         color: #bcebe7;
@@ -113,6 +118,24 @@ st.markdown(
         color: #829ab1;
         font-size: .9rem;
         font-weight: 500;
+    }
+    .score-description {
+        color: #d8f8f2;
+        font-size: .78rem;
+        line-height: 1.35;
+        margin-top: .45rem;
+    }
+    .score-bar {
+        background: rgba(255, 255, 255, .2);
+        border-radius: 99px;
+        height: 7px;
+        margin-top: .8rem;
+        overflow: hidden;
+    }
+    .score-fill {
+        background: linear-gradient(90deg, #9ee7dc, #ffffff);
+        border-radius: 99px;
+        height: 100%;
     }
     .hint {
         color: #263f58;
@@ -249,15 +272,29 @@ with tab_single:
             st.error(str(error))
         else:
             st.markdown("### Evaluation snapshot")
-            summary = st.columns(2 + len(result["scores"]))
-            summary[0].metric("Overall", f"{result['total_score']}/{result['maximum_score']}")
+            summary = st.columns(2)
+            summary[0].metric("Overall score", f"{result['total_score']}/{result['maximum_score']}")
             summary[1].metric("Percentage", f"{result['percentage']}%")
-            for index, (criterion, score) in enumerate(result["scores"].items(), start=2):
-                summary[index].markdown(
-                    f'<div class="score-card"><div class="score-name">{criterion}</div>'
-                    f'<div class="score-value">{score}<span> / 10</span></div></div>',
-                    unsafe_allow_html=True,
-                )
+            st.markdown("#### Criterion performance")
+            criterion_descriptions = {
+                "correctness": "Technical accuracy and alignment with the expected concepts.",
+                "relevance": "How directly the response addresses the question.",
+                "completeness": "Coverage of the important ideas and reasoning.",
+                "clarity": "Structure, concision, and ease of understanding.",
+            }
+            criteria = list(result["scores"].items())
+            for row_start in range(0, len(criteria), 2):
+                criterion_row = st.columns(2)
+                for column, (criterion, score) in zip(criterion_row, criteria[row_start:row_start + 2]):
+                    column.markdown(
+                        f'<div class="score-card">'
+                        f'<div class="score-name">{criterion}</div>'
+                        f'<div class="score-value">{score}<span> / 10</span></div>'
+                        f'<div class="score-description">{criterion_descriptions.get(criterion, "Evaluation criterion score.")}</div>'
+                        f'<div class="score-bar"><div class="score-fill" style="width: {score * 10}%"></div></div>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
             st.markdown("### Score breakdown")
             st.bar_chart(result["scores"], horizontal=True, height=220)
             st.markdown("### Actionable feedback")
