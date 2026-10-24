@@ -450,11 +450,6 @@ if "evaluation_form_id" not in st.session_state:
     st.session_state.evaluation_form_id = 0
 if "generated_reference" not in st.session_state:
     st.session_state.generated_reference = ""
-if st.button("Start a new evaluation", use_container_width=True):
-    for key in ("question_input", "candidate_answer_input", "reference_input"):
-        st.session_state.pop(key, None)
-    st.session_state.generated_reference = ""
-    st.rerun()
 form_id = st.session_state.evaluation_form_id
 question = st.text_area(
     "Interview question",
@@ -613,3 +608,9 @@ if should_evaluate:
                 f'<h5>Missing concept statements</h5>{missing_items}</div>',
                 unsafe_allow_html=True,
             )
+        st.divider()
+        if st.button("Start a new evaluation", use_container_width=True):
+            for key in ("question_input", "candidate_answer_input", "reference_input"):
+                st.session_state.pop(key, None)
+            st.session_state.generated_reference = ""
+            st.rerun()
