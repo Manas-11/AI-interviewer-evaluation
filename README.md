@@ -52,6 +52,9 @@ the consumer app and Gemini API access are separate; create the key in Google
 AI Studio. OpenAI remains supported as a secondary provider by using
 `OPENAI_API_KEY` and `OPENAI_MODEL` instead.
 
+The app discovers the models enabled for the key and selects one that supports
+`generateContent`; it does not rely only on a hard-coded model alias.
+
 The candidate answer can remain manually entered. Leave the reference-answer
 field empty and it will be generated automatically from the question before
 evaluation. Generated text remains editable so an interviewer can correct or
