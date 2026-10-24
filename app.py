@@ -3,14 +3,37 @@
 from __future__ import annotations
 
 import html
+import os
 
 import altair as alt
 import streamlit as st
+from streamlit.errors import StreamlitSecretNotFoundError
 
 from engine.evaluator import evaluate_answer_with_model
 from engine.reference import generate_reference_answer
 
 st.set_page_config(page_title="Interview Evaluator", layout="wide")
+
+
+def _load_openai_settings() -> bool:
+    """Load OpenAI settings from Streamlit secrets without exposing the key."""
+
+    if os.getenv("OPENAI_API_KEY"):
+        return True
+    try:
+        secret_key = st.secrets.get("OPENAI_API_KEY")
+        if secret_key:
+            os.environ["OPENAI_API_KEY"] = str(secret_key).strip()
+            secret_model = st.secrets.get("OPENAI_MODEL")
+            if secret_model:
+                os.environ["OPENAI_MODEL"] = str(secret_model).strip()
+            return True
+    except StreamlitSecretNotFoundError:
+        return False
+    return False
+
+
+openai_configured = _load_openai_settings()
 
 
 def _performance_summary(percentage: float) -> tuple[str, str]:
@@ -439,6 +462,15 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+if openai_configured:
+    st.caption(
+        f"Semantic model grading is configured ({os.getenv('OPENAI_MODEL', 'gpt-4o-mini')})."
+    )
+else:
+    st.info(
+        "Semantic model grading is not configured. Add OPENAI_API_KEY to "
+        "Streamlit Secrets to enable it; local meaning-aware grading remains available."
+    )
 
 with st.sidebar:
     st.markdown("## Interview Evaluator")

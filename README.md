@@ -38,6 +38,19 @@ $env:OPENAI_API_KEY = "your-key"
 $env:OPENAI_MODEL = "gpt-4o-mini"
 ```
 
+For Streamlit Community Cloud, open **App settings → Secrets** and add TOML
+entries (do not commit this value to the repository):
+
+```toml
+OPENAI_API_KEY = "sk-your-real-api-key"
+OPENAI_MODEL = "gpt-4o-mini"
+```
+
+After saving the secrets, restart the app. The dashboard will show
+`Semantic model grading is configured` when the key is being loaded. A valid
+OpenAI API key with API billing/access is required; a ChatGPT Plus subscription
+does not automatically provide API access.
+
 The candidate answer can remain manually entered. Leave the reference-answer
 field empty and it will be generated automatically from the question before
 evaluation. Generated text remains editable so an interviewer can correct or
