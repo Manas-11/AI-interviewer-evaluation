@@ -470,6 +470,22 @@ answer = st.text_area(
     placeholder="Paste or type the candidate's response here...",
     key=f"candidate_answer_input_{form_id}",
 )
+generate_clicked = st.button("Generate reference answer", use_container_width=True)
+if generate_clicked:
+    try:
+        generated = generate_reference_answer(question)
+    except (RuntimeError, TypeError, ValueError) as error:
+        st.error(str(error))
+    else:
+        st.session_state.generated_reference = str(generated["answer"])
+        st.session_state.reference_input = str(generated["answer"])
+        if generated.get("warning"):
+            st.warning(
+                f"{generated['warning']} Using the local reference generator instead."
+            )
+        st.success(f"Reference generated using {generated['source']}.")
+        st.rerun()
+
 if "reference_input" not in st.session_state:
     st.session_state.reference_input = st.session_state.generated_reference
 reference = st.text_area(
@@ -478,24 +494,7 @@ reference = st.text_area(
     help="Generated from the question. You may edit it before scoring.",
     key="reference_input",
 )
-generate_clicked, evaluate_clicked = st.columns([1, 1])
-with generate_clicked:
-    if st.button("Generate reference answer", use_container_width=True):
-        try:
-            generated = generate_reference_answer(question)
-        except (RuntimeError, TypeError, ValueError) as error:
-            st.error(str(error))
-        else:
-            st.session_state.generated_reference = str(generated["answer"])
-            st.session_state.reference_input = str(generated["answer"])
-            if generated.get("warning"):
-                st.warning(
-                    f"{generated['warning']} Using the local reference generator instead."
-                )
-            st.success(f"Reference generated using {generated['source']}.")
-            st.rerun()
-with evaluate_clicked:
-    should_evaluate = st.button("Evaluate answer", type="primary", use_container_width=True)
+should_evaluate = st.button("Evaluate answer", type="primary", use_container_width=True)
 if should_evaluate:
     try:
         if not reference.strip():
