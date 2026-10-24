@@ -2,16 +2,11 @@
 
 from __future__ import annotations
 
-import json
-from typing import Any
-
 import altair as alt
 import streamlit as st
-from pydantic import ValidationError
 
 from engine.evaluator import evaluate_answer
 from engine.reference import generate_reference_answer
-from evaluation.transcript import process_transcript
 
 st.set_page_config(page_title="Interview Evaluator", page_icon="🎯", layout="wide")
 
@@ -234,158 +229,131 @@ with st.sidebar:
     st.metric("Scoring criteria", "4 × 10", help="Correctness, relevance, completeness, and clarity.")
     st.caption("Human review remains essential for hiring decisions.")
 
-tab_single, tab_transcript = st.tabs(["Evaluate an answer", "Validate a transcript"])
-
-with tab_single:
-    st.markdown("### Evaluate a candidate answer")
-    st.markdown('<p class="hint">Start with a question. The reference answer can be generated automatically and edited before scoring.</p>', unsafe_allow_html=True)
-    question = st.text_area("Interview question", placeholder="e.g. What is dependency injection?", height=90)
-    answer = st.text_area("Candidate answer", height=145, placeholder="Paste or type the candidate's response here...")
-    if "generated_reference" not in st.session_state:
-        st.session_state.generated_reference = ""
-    reference = st.text_area(
-        "Reference answer / expected concepts (generated automatically)",
-        value=st.session_state.generated_reference,
-        height=145,
-        help="Generated from the question. You may edit it before scoring.",
-    )
-    generate_clicked, evaluate_clicked = st.columns([1, 1])
-    with generate_clicked:
-        if st.button("✨ Generate reference answer", use_container_width=True):
-            try:
-                generated = generate_reference_answer(question)
-            except (RuntimeError, TypeError, ValueError) as error:
-                st.error(str(error))
-            else:
-                st.session_state.generated_reference = str(generated["answer"])
-                if generated.get("warning"):
-                    st.warning(
-                        f"{generated['warning']} Using the local reference generator instead."
-                    )
-                st.success(f"Reference generated using {generated['source']}.")
-                st.rerun()
-    with evaluate_clicked:
-        should_evaluate = st.button("🚀 Evaluate answer", type="primary", use_container_width=True)
-    if should_evaluate:
+st.markdown("### Evaluate a candidate answer")
+st.markdown('<p class="hint">Start with a question. The reference answer can be generated automatically and edited before scoring.</p>', unsafe_allow_html=True)
+question = st.text_area("Interview question", placeholder="e.g. What is dependency injection?", height=90)
+answer = st.text_area("Candidate answer", height=145, placeholder="Paste or type the candidate's response here...")
+if "generated_reference" not in st.session_state:
+    st.session_state.generated_reference = ""
+reference = st.text_area(
+    "Reference answer / expected concepts (generated automatically)",
+    value=st.session_state.generated_reference,
+    height=145,
+    help="Generated from the question. You may edit it before scoring.",
+)
+generate_clicked, evaluate_clicked = st.columns([1, 1])
+with generate_clicked:
+    if st.button("✨ Generate reference answer", use_container_width=True):
         try:
-            if not reference.strip():
-                generated = generate_reference_answer(question)
-                reference = generated["answer"]
-                st.session_state.generated_reference = reference
-                if generated.get("warning"):
-                    st.warning(
-                        f"{generated['warning']} Using the local reference generator instead."
-                    )
-                st.info(
-                    f"Reference answer generated automatically using {generated['source']}."
-                )
-            result = evaluate_answer(question, answer, reference)
+            generated = generate_reference_answer(question)
         except (RuntimeError, TypeError, ValueError) as error:
             st.error(str(error))
         else:
-            st.markdown("### Evaluation snapshot")
-            summary = st.columns(2)
-            summary[0].metric("Overall score", f"{result['total_score']}/{result['maximum_score']}")
-            summary[1].metric("Percentage", f"{result['percentage']}%")
-            st.markdown('<h4 class="criterion-heading">Criterion performance</h4>', unsafe_allow_html=True)
-            criterion_descriptions = {
-                "correctness": "Technical accuracy and alignment with the expected concepts.",
-                "relevance": "How directly the response addresses the question.",
-                "completeness": "Coverage of the important ideas and reasoning.",
-                "clarity": "Structure, concision, and ease of understanding.",
-            }
-            criteria = list(result["scores"].items())
-            for row_start in range(0, len(criteria), 2):
-                criterion_row = st.columns(2)
-                for column, (criterion, score) in zip(criterion_row, criteria[row_start:row_start + 2]):
-                    column.markdown(
-                        f'<div class="score-card">'
-                        f'<div class="score-name">{criterion}</div>'
-                        f'<div class="score-value">{score}<span> / 10</span></div>'
-                        f'<div class="score-description">{criterion_descriptions.get(criterion, "Evaluation criterion score.")}</div>'
-                        f'<div class="score-bar"><div class="score-fill" style="width: {score * 10}%"></div></div>'
-                        f'</div>',
-                        unsafe_allow_html=True,
-                    )
-                    column.caption(f"Why this score: {result['score_reasons'][criterion]}")
-            st.markdown('<h3 class="chart-heading">Score breakdown</h3>', unsafe_allow_html=True)
-            chart_data = [
-                {"Criterion": criterion.title(), "Score": score}
-                for criterion, score in result["scores"].items()
-            ]
-            score_chart = (
-                alt.Chart(alt.Data(values=chart_data))
-                .mark_bar(
-                    cornerRadiusTopRight=8,
-                    cornerRadiusBottomRight=8,
-                    color="#176b87",
+            st.session_state.generated_reference = str(generated["answer"])
+            if generated.get("warning"):
+                st.warning(
+                    f"{generated['warning']} Using the local reference generator instead."
                 )
-                .encode(
-                    y=alt.Y(
-                        "Criterion:N",
-                        sort=None,
-                        title=None,
-                        axis=alt.Axis(
-                            labelColor="#102a43",
-                            labelFontSize=13,
-                            labelFontWeight="bold",
-                            labelPadding=10,
-                            ticks=False,
-                            domain=False,
-                        ),
-                    ),
-                    x=alt.X(
-                        "Score:Q",
-                        title="Score out of 10",
-                        scale=alt.Scale(domain=[0, 10]),
-                        axis=alt.Axis(
-                            labelColor="#486581",
-                            titleColor="#102a43",
-                            gridColor="#c9d6e3",
-                            tickColor="#9fb3c8",
-                            titlePadding=12,
-                        ),
-                    ),
-                    tooltip=[
-                        alt.Tooltip("Criterion:N", title="Criterion"),
-                        alt.Tooltip("Score:Q", title="Score", format=".0f"),
-                    ],
+            st.success(f"Reference generated using {generated['source']}.")
+            st.rerun()
+with evaluate_clicked:
+    should_evaluate = st.button("🚀 Evaluate answer", type="primary", use_container_width=True)
+if should_evaluate:
+    try:
+        if not reference.strip():
+            generated = generate_reference_answer(question)
+            reference = generated["answer"]
+            st.session_state.generated_reference = reference
+            if generated.get("warning"):
+                st.warning(
+                    f"{generated['warning']} Using the local reference generator instead."
                 )
-                .properties(height=220, background="transparent")
-                .configure_view(stroke=None)
-                .configure_axis(gridOpacity=.65)
+            st.info(
+                f"Reference answer generated automatically using {generated['source']}."
             )
-            st.altair_chart(score_chart, use_container_width=True)
-            st.markdown("### Actionable feedback")
-            for item in result["feedback"]:
-                st.markdown(f"✅ {item}")
-            with st.expander("Evidence and missing concepts"):
-                evidence_left, evidence_right = st.columns(2)
-                evidence_left.markdown("**Matched concept statements**")
-                evidence_left.info(", ".join(result["matched_concepts"]) or "None")
-                evidence_right.markdown("**Missing concept statements**")
-                evidence_right.warning(", ".join(result["missing_concepts"]) or "None")
-
-with tab_transcript:
-    st.markdown("### Validate an interview transcript")
-    st.markdown('<p class="hint">Check transcript structure before sending it into a broader evaluation workflow.</p>', unsafe_allow_html=True)
-    example = {
-        "role": "Backend Developer",
-        "instructions": "Assess technical reasoning and communication.",
-        "transcript": [
-            {"speaker": "interviewer", "text": "How do you prevent duplicate payments?"},
-            {"speaker": "candidate", "text": "I would use an idempotency key."},
-        ],
-    }
-    raw_json = st.text_area("Transcript JSON", value=json.dumps(example, indent=2), height=300)
-    if st.button("Validate transcript"):
-        try:
-            payload: Any = json.loads(raw_json)
-            processed = process_transcript(payload)
-        except json.JSONDecodeError as error:
-            st.error(f"Invalid JSON: {error}")
-        except (TypeError, ValidationError, ValueError) as error:
-            st.error(f"Invalid transcript: {error}")
-        else:
-            st.success(f"Validated {processed['turn_count']} turns for {processed['role']}.")
-            st.json(processed)
+        result = evaluate_answer(question, answer, reference)
+    except (RuntimeError, TypeError, ValueError) as error:
+        st.error(str(error))
+    else:
+        st.markdown("### Evaluation snapshot")
+        summary = st.columns(2)
+        summary[0].metric("Overall score", f"{result['total_score']}/{result['maximum_score']}")
+        summary[1].metric("Percentage", f"{result['percentage']}%")
+        st.markdown('<h4 class="criterion-heading">Criterion performance</h4>', unsafe_allow_html=True)
+        criterion_descriptions = {
+            "correctness": "Technical accuracy and alignment with the expected concepts.",
+            "relevance": "How directly the response addresses the question.",
+            "completeness": "Coverage of the important ideas and reasoning.",
+            "clarity": "Structure, concision, and ease of understanding.",
+        }
+        criteria = list(result["scores"].items())
+        for row_start in range(0, len(criteria), 2):
+            criterion_row = st.columns(2)
+            for column, (criterion, score) in zip(criterion_row, criteria[row_start:row_start + 2]):
+                column.markdown(
+                    f'<div class="score-card">'
+                    f'<div class="score-name">{criterion}</div>'
+                    f'<div class="score-value">{score}<span> / 10</span></div>'
+                    f'<div class="score-description">{criterion_descriptions.get(criterion, "Evaluation criterion score.")}</div>'
+                    f'<div class="score-bar"><div class="score-fill" style="width: {score * 10}%"></div></div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+                column.caption(f"Why this score: {result['score_reasons'][criterion]}")
+        st.markdown('<h3 class="chart-heading">Score breakdown</h3>', unsafe_allow_html=True)
+        chart_data = [
+            {"Criterion": criterion.title(), "Score": score}
+            for criterion, score in result["scores"].items()
+        ]
+        score_chart = (
+            alt.Chart(alt.Data(values=chart_data))
+            .mark_bar(
+                cornerRadiusTopRight=8,
+                cornerRadiusBottomRight=8,
+                color="#176b87",
+            )
+            .encode(
+                y=alt.Y(
+                    "Criterion:N",
+                    sort=None,
+                    title=None,
+                    axis=alt.Axis(
+                        labelColor="#102a43",
+                        labelFontSize=13,
+                        labelFontWeight="bold",
+                        labelPadding=10,
+                        ticks=False,
+                        domain=False,
+                    ),
+                ),
+                x=alt.X(
+                    "Score:Q",
+                    title="Score out of 10",
+                    scale=alt.Scale(domain=[0, 10]),
+                    axis=alt.Axis(
+                        labelColor="#486581",
+                        titleColor="#102a43",
+                        gridColor="#c9d6e3",
+                        tickColor="#9fb3c8",
+                        titlePadding=12,
+                    ),
+                ),
+                tooltip=[
+                    alt.Tooltip("Criterion:N", title="Criterion"),
+                    alt.Tooltip("Score:Q", title="Score", format=".0f"),
+                ],
+            )
+            .properties(height=220, background="transparent")
+            .configure_view(stroke=None)
+            .configure_axis(gridOpacity=.65)
+        )
+        st.altair_chart(score_chart, use_container_width=True)
+        st.markdown("### Actionable feedback")
+        for item in result["feedback"]:
+            st.markdown(f"✅ {item}")
+        with st.expander("Evidence and missing concepts"):
+            evidence_left, evidence_right = st.columns(2)
+            evidence_left.markdown("**Matched concept statements**")
+            evidence_left.info(", ".join(result["matched_concepts"]) or "None")
+            evidence_right.markdown("**Missing concept statements**")
+            evidence_right.warning(", ".join(result["missing_concepts"]) or "None")

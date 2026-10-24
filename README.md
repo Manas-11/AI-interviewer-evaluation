@@ -8,6 +8,11 @@ Reference answers are generated automatically from the question. If
 `OPENAI_API_KEY` is configured, the app uses the selected OpenAI model;
 otherwise it uses a deterministic local fallback.
 
+The dashboard is focused on the primary workflow: evaluating one question and
+one candidate answer at a time. Transcript validation remains available in the
+`evaluation` package for future full-interview workflows but is not shown in
+the current UI.
+
 ## Why this design
 
 The application does not silently call an external AI provider or require an
@@ -24,8 +29,7 @@ python -m pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Open the URL printed by Streamlit, then use **Evaluate an answer** or
-**Validate a transcript**.
+Open the URL printed by Streamlit, then use **Evaluate an answer**.
 
 To enable higher-quality model-generated reference answers, set:
 
