@@ -22,6 +22,16 @@ def _performance_summary(percentage: float) -> tuple[str, str]:
         return "Needs development", "The answer shows partial understanding but needs more complete reasoning."
     return "Needs significant improvement", "The response needs stronger technical coverage and clearer explanation."
 
+
+def _reset_evaluation() -> None:
+    """Clear all evaluation widget state before the next app render."""
+
+    for key in list(st.session_state):
+        if key.startswith(("question_input_", "candidate_answer_input_", "reference_input_")):
+            del st.session_state[key]
+    st.session_state.evaluation_form_id = st.session_state.get("evaluation_form_id", 0) + 1
+    st.session_state.generated_reference = ""
+
 st.markdown(
     """
     <style>
@@ -610,7 +620,8 @@ if should_evaluate:
                 unsafe_allow_html=True,
             )
         st.divider()
-        if st.button("Start a new evaluation", use_container_width=True):
-                    st.session_state.evaluation_form_id += 1
-                    st.session_state.generated_reference = ""
-                    st.rerun()
+        st.button(
+            "Start a new evaluation",
+            use_container_width=True,
+            on_click=_reset_evaluation,
+        )
