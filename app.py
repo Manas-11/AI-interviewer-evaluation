@@ -15,13 +15,21 @@ st.set_page_config(page_title="Interview Evaluator", page_icon="🎯", layout="w
 st.markdown(
     """
     <style>
-    .stApp {
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stAppViewContainer"] > section,
+    [data-testid="stAppViewContainer"] .main, .main, .block-container {
         background:
             radial-gradient(circle at 8% 8%, rgba(91, 110, 225, .42), transparent 28rem),
             radial-gradient(circle at 92% 18%, rgba(193, 77, 214, .30), transparent 25rem),
             radial-gradient(circle at 72% 92%, rgba(25, 168, 145, .25), transparent 28rem),
             linear-gradient(135deg, #dfe9fb 0%, #e8e0f7 48%, #dff4ef 100%);
         background-attachment: fixed;
+        color: #172b40;
+    }
+    [data-testid="stAppViewContainer"] {
+        min-height: 100vh;
+    }
+    .block-container {
+        padding-bottom: 4rem;
     }
     .stApp::before {
         content: "";
@@ -206,31 +214,40 @@ st.markdown(
     }
     .concept-detail {
         color: rgba(255, 255, 255, .82);
-        display: none;
+        display: block;
         font-size: .78rem;
         line-height: 1.35;
         margin-top: .25rem;
     }
     .concept-item:hover .concept-detail {
-        display: block;
+        color: #ffffff;
     }
     .matched-evidence {
-        background: linear-gradient(145deg, #123d52, #176b87);
-        border: 1px solid rgba(158, 231, 220, .45);
+        background: linear-gradient(145deg, #102a43 0%, #176b87 100%);
+        border: 1px solid rgba(158, 231, 220, .55);
         color: #effffc;
     }
     .matched-evidence h5 {
         color: #9ee7dc;
     }
     .missing-evidence {
-        background: linear-gradient(145deg, #263b68, #40558b);
-        border: 1px solid rgba(179, 198, 255, .45);
-        color: #f3f6ff;
+        background: linear-gradient(145deg, #173f5f 0%, #206b82 100%);
+        border: 1px solid rgba(158, 231, 220, .4);
+        color: #effffc;
     }
     .missing-evidence h5 {
-        color: #c8d6ff;
+        color: #bcebe7;
     }
     [data-testid="stAlert"] p {
+        color: #102a43 !important;
+    }
+    footer, [data-testid="stDecoration"], [data-testid="stStatusWidget"] {
+        display: none !important;
+    }
+    [data-testid="stExpander"] details,
+    [data-testid="stExpander"] summary,
+    [data-testid="stExpander"] div[role="group"] {
+        background: rgba(16, 42, 67, .12) !important;
         color: #102a43 !important;
     }
     div[data-testid="stMetric"] {
