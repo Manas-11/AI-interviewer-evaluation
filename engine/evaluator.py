@@ -64,11 +64,8 @@ _SYNONYMS = {
 _PHRASE_ALIASES = (
     (r"\bgets?\s+what\s+it\s+needs\b", "supply dependency"),
     (r"\bwhat\s+it\s+needs\b", "dependency"),
-    (r"\breceives?\s+(?:its\s+)?dependencies?\s+from\s+another\s+object\b", "supply dependency outside"),
     (r"\bfrom\s+an?\s+external\s+(?:provider|source)\b", "outside"),
-    (r"\bfrom\s+another\s+(?:object|component|service)\b", "outside"),
     (r"\bwithout\s+creating\s+(?:them|those\s+objects?)\s+(?:itself|internally)\b", "outside"),
-    (r"\binstead\s+of\s+creating\s+(?:them|those\s+objects?)\b", "outside"),
     (r"\bmake(?:s)?\s+it\s+easier\s+to\s+test\b", "improve testability"),
     (r"\bmake(?:s)?\s+testing\s+easier\b", "improve testability"),
 )
@@ -283,6 +280,34 @@ def evaluate_many(
     return [evaluate_answer(question, answer, reference) for question, answer, reference in answers]
 
 
+def _semantic_evaluation_prompt(
+    question: str,
+    candidate_answer: str,
+    reference_answer: str,
+) -> str:
+    return (
+        "You are comparing an interview candidate's meaning with a rubric. "
+        "First derive the essential, independently checkable concepts from the "
+        "reference answer. Then determine which of those concepts are actually "
+        "supported by the candidate answer. Treat accurate paraphrases, "
+        "synonyms, reordered explanations, and concrete examples as equivalent "
+        "when they express the same idea. Do not award credit for a shared word "
+        "without matching meaning. Do not invent evidence that is absent from "
+        "the candidate. A concept is matched only when the candidate supports "
+        "it; otherwise put the reference concept in missing_concepts. Score "
+        "correctness and completeness from this concept comparison, relevance "
+        "from alignment with the question, and clarity from the candidate's "
+        "organization and understandable wording. Return JSON only with this "
+        "shape: "
+        '{"scores":{"correctness":0,"relevance":0,"completeness":0,"clarity":0},'
+        '"matched_concepts":[],"missing_concepts":[],"score_reasons":{},'
+        '"feedback":[]}. Scores must be integers from 0 to 10. Concept lists '
+        "must contain complete reference ideas, not isolated words. "
+        f"\nQuestion:\n{question}\nCandidate answer:\n{candidate_answer}"
+        f"\nGenerated reference answer:\n{reference_answer}"
+    )
+
+
 def evaluate_answer_with_model(
     question: str,
     candidate_answer: str,
@@ -299,28 +324,7 @@ def evaluate_answer_with_model(
     if os.getenv("GEMINI_API_KEY") and candidate_answer.strip():
         try:
             raw = gemini_generate(
-                "You are evaluating an interview answer against a generated "
-                "reference rubric. Compare the meaning of the candidate answer "
-                "with the ideas required by the reference, not the exact wording. "
-                "Give credit when the candidate explains the same concept using "
-                "different words, examples, or sentence structure. Break the "
-                "reference into essential concepts, then identify which concepts "
-                "the candidate supports, which are missing, and whether any "
-                "claims contradict the reference. Do not award credit for a "
-                "keyword appearing without the correct meaning. Use only claims "
-                "actually present in the candidate answer. Return JSON only with "
-                "this shape: "
-                '{"scores":{"correctness":0,"relevance":0,"completeness":0,"clarity":0},'
-                '"matched_concepts":[],"missing_concepts":[],"score_reasons":{},'
-                '"feedback":[]}. Scores must be integers from 0 to 10. '
-                "Correctness measures factual agreement and absence of "
-                "contradictions. Relevance measures whether it answers the "
-                "question. Completeness measures essential-concept coverage. "
-                "Clarity measures organization and understandable explanation. "
-                "The reference is a rubric, not a script the candidate must "
-                f"repeat. Question: {question}\n"
-                f"Candidate answer: {candidate_answer}\n"
-                f"Generated reference rubric: {reference_answer}"
+                _semantic_evaluation_prompt(question, candidate_answer, reference_answer)
             )
             parsed = json.loads(raw.strip().removeprefix("```json").removesuffix("```").strip())
             scores = parsed["scores"]
@@ -359,16 +363,7 @@ def evaluate_answer_with_model(
         response = OpenAI(api_key=api_key).responses.create(
             model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
             input=(
-                "Evaluate an interview answer semantically. Give credit for "
-                "accurate paraphrases, not just shared words. Use only evidence "
-                "from the candidate answer and compare it with the question and "
-                "reference answer. Return JSON only with this shape: "
-                '{"scores":{"correctness":0,"relevance":0,"completeness":0,"clarity":0},'
-                '"matched_concepts":[],"missing_concepts":[],"score_reasons":{},'
-                '"feedback":[]}. Scores must be integers from 0 to 10. Concept '
-                "lists must contain complete ideas, not isolated words. "
-                f"Question: {question}\nCandidate answer: {candidate_answer}\n"
-                f"Reference answer: {reference_answer}"
+                _semantic_evaluation_prompt(question, candidate_answer, reference_answer)
             ),
             temperature=0.1,
             max_output_tokens=700,
