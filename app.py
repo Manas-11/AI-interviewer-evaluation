@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import html
-import json
-from datetime import datetime, timezone
 
 import altair as alt
 import streamlit as st
@@ -615,17 +613,3 @@ if should_evaluate:
                 f'<h5>Missing concept statements</h5>{missing_items}</div>',
                 unsafe_allow_html=True,
             )
-        report = {
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-            "question": question,
-            "candidate_answer": answer,
-            "reference_answer": reference,
-            "evaluation": result,
-        }
-        st.download_button(
-            "Download evaluation report",
-            data=json.dumps(report, indent=2, ensure_ascii=True),
-            file_name="interview-evaluation-report.json",
-            mime="application/json",
-            use_container_width=True,
-        )

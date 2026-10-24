@@ -44,11 +44,8 @@ evaluation. Generated text remains editable so an interviewer can correct or
 extend the rubric.
 
 After evaluation, the dashboard provides a plain-language performance summary,
-criterion-level deduction explanations, concept evidence, and a
-**Download evaluation report** button. The report is a JSON file containing the
-question, candidate answer, reference answer, timestamp, scores, feedback, and
-matched or missing concepts. Use **Start a new evaluation** to clear the
-current form for the next candidate.
+criterion-level deduction explanations, and concept evidence. Use **Start a
+new evaluation** to clear the current form for the next candidate.
 
 ## Test and CLI smoke check
 
