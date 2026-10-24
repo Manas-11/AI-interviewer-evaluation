@@ -450,15 +450,14 @@ st.markdown('<div class="workflow-heading">Evaluate a candidate answer</div>', u
 st.markdown('<p class="hint">Start with a question. The reference answer can be generated automatically and edited before scoring.</p>', unsafe_allow_html=True)
 if "evaluation_form_id" not in st.session_state:
     st.session_state.evaluation_form_id = 0
-if "reference_field_id" not in st.session_state:
-    st.session_state.reference_field_id = 0
+if "generated_reference" not in st.session_state:
+    st.session_state.generated_reference = ""
 if st.button("Start a new evaluation", use_container_width=True):
-    st.session_state.evaluation_form_id += 1
-    st.session_state.reference_field_id = 0
+    for key in ("question_input", "candidate_answer_input", "reference_input"):
+        st.session_state.pop(key, None)
     st.session_state.generated_reference = ""
     st.rerun()
 form_id = st.session_state.evaluation_form_id
-reference_field_id = st.session_state.reference_field_id
 question = st.text_area(
     "Interview question",
     placeholder="e.g. What is dependency injection?",
@@ -471,14 +470,13 @@ answer = st.text_area(
     placeholder="Paste or type the candidate's response here...",
     key=f"candidate_answer_input_{form_id}",
 )
-if "generated_reference" not in st.session_state:
-    st.session_state.generated_reference = ""
+if "reference_input" not in st.session_state:
+    st.session_state.reference_input = st.session_state.generated_reference
 reference = st.text_area(
     "Reference answer / expected concepts (generated automatically)",
-    value=st.session_state.generated_reference,
     height=145,
     help="Generated from the question. You may edit it before scoring.",
-    key=f"reference_input_{form_id}_{reference_field_id}",
+    key="reference_input",
 )
 generate_clicked, evaluate_clicked = st.columns([1, 1])
 with generate_clicked:
@@ -489,7 +487,7 @@ with generate_clicked:
             st.error(str(error))
         else:
             st.session_state.generated_reference = str(generated["answer"])
-            st.session_state.reference_field_id += 1
+            st.session_state.reference_input = str(generated["answer"])
             if generated.get("warning"):
                 st.warning(
                     f"{generated['warning']} Using the local reference generator instead."
