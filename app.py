@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import html
+
 import altair as alt
 import streamlit as st
 
@@ -176,6 +178,11 @@ st.markdown(
         padding: 1rem 1.1rem;
         min-height: 115px;
         box-shadow: 0 7px 18px rgba(16, 42, 67, .10);
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .evidence-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 14px 28px rgba(16, 42, 67, .20);
     }
     .evidence-card h5 {
         margin: 0 0 .7rem;
@@ -188,6 +195,25 @@ st.markdown(
         line-height: 1.45;
         font-size: .9rem;
     }
+    .concept-item {
+        border-top: 1px solid rgba(255, 255, 255, .22);
+        cursor: help;
+        padding: .55rem .2rem .35rem;
+        position: relative;
+    }
+    .concept-item:first-of-type {
+        border-top: 0;
+    }
+    .concept-detail {
+        color: rgba(255, 255, 255, .82);
+        display: none;
+        font-size: .78rem;
+        line-height: 1.35;
+        margin-top: .25rem;
+    }
+    .concept-item:hover .concept-detail {
+        display: block;
+    }
     .matched-evidence {
         background: linear-gradient(145deg, #123d52, #176b87);
         border: 1px solid rgba(158, 231, 220, .45);
@@ -197,12 +223,12 @@ st.markdown(
         color: #9ee7dc;
     }
     .missing-evidence {
-        background: linear-gradient(145deg, #65451f, #9a6a28);
-        border: 1px solid rgba(255, 224, 164, .6);
-        color: #fff8e8;
+        background: linear-gradient(145deg, #263b68, #40558b);
+        border: 1px solid rgba(179, 198, 255, .45);
+        color: #f3f6ff;
     }
     .missing-evidence h5 {
-        color: #ffe0a4;
+        color: #c8d6ff;
     }
     [data-testid="stAlert"] p {
         color: #102a43 !important;
@@ -385,12 +411,19 @@ if should_evaluate:
         for item in result["feedback"]:
             st.markdown(f"✅ {item}")
         with st.expander("Evidence and missing concepts"):
+            st.caption("Open this panel for complete evidence. Hover over any concept statement for its interpretation.")
             evidence_left, evidence_right = st.columns(2)
             matched_items = "".join(
-                f"<p>✓ {concept}</p>" for concept in result["matched_concepts"]
+                f'<div class="concept-item"><p>✓ {html.escape(concept)}</p>'
+                f'<div class="concept-detail">Supported: this idea is reflected in the candidate answer. '
+                f'Hovering reveals the evidence interpretation.</div></div>'
+                for concept in result["matched_concepts"]
             ) or "<p>No supported concept statements found.</p>"
             missing_items = "".join(
-                f"<p>＋ {concept}</p>" for concept in result["missing_concepts"]
+                f'<div class="concept-item"><p>＋ {html.escape(concept)}</p>'
+                f'<div class="concept-detail">Not supported: this expected idea was not sufficiently '
+                f'found in the candidate answer.</div></div>'
+                for concept in result["missing_concepts"]
             ) or "<p>No missing concept statements.</p>"
             evidence_left.markdown(
                 f'<div class="evidence-card matched-evidence">'
