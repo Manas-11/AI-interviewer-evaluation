@@ -20,7 +20,7 @@ def gemini_generate(prompt: str) -> str:
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY is not configured.")
-    model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+    model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     url = (
         "https://generativelanguage.googleapis.com/v1beta/models/"
         f"{model}:generateContent?key={api_key}"
@@ -33,7 +33,17 @@ def gemini_generate(prompt: str) -> str:
     try:
         with urlopen(request, timeout=45) as response:
             data = json.loads(response.read().decode("utf-8"))
-    except (HTTPError, URLError, TimeoutError, OSError, json.JSONDecodeError) as error:
+    except HTTPError as error:
+        try:
+            detail = error.read().decode("utf-8")[:300]
+        except OSError:
+            detail = "No response details were returned."
+        raise RuntimeError(
+            f"Gemini request failed with HTTP {error.code}: {detail}. "
+            "Check that the key is a Google AI Studio API key, the model is "
+            "available, and the Generative Language API is enabled."
+        ) from error
+    except (URLError, TimeoutError, OSError, json.JSONDecodeError) as error:
         raise RuntimeError(
             "Gemini could not process the request. Check GEMINI_API_KEY, "
             "GEMINI_MODEL, quota, and API access."
