@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+from functools import lru_cache
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -21,7 +22,7 @@ def gemini_generate(prompt: str) -> str:
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY is not configured.")
     configured_model = os.getenv("GEMINI_MODEL", "").strip().removeprefix("models/")
-    models = _available_gemini_models(api_key, configured_model)
+    models = [configured_model or "gemini-3.8-flash"]
     payload = json.dumps({
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"temperature": 0.1, "maxOutputTokens": 900},
@@ -34,7 +35,7 @@ def gemini_generate(prompt: str) -> str:
         )
         request = Request(url, data=payload, headers={"Content-Type": "application/json"})
         try:
-            with urlopen(request, timeout=45) as response:
+            with urlopen(request, timeout=12) as response:
                 data = json.loads(response.read().decode("utf-8"))
             answer = data["candidates"][0]["content"]["parts"][0]["text"].strip()
             if not answer:
@@ -48,6 +49,11 @@ def gemini_generate(prompt: str) -> str:
             last_error = f"HTTP {error.code} for {model}: {detail}"
             if error.code != 404:
                 break
+            if len(models) == 1:
+                models.extend(
+                    candidate for candidate in _available_gemini_models(api_key, configured_model)
+                    if candidate not in models
+                )
         except (URLError, TimeoutError, OSError, json.JSONDecodeError) as error:
             raise RuntimeError(
                 "Gemini could not process the request. Check GEMINI_API_KEY, "
@@ -55,12 +61,10 @@ def gemini_generate(prompt: str) -> str:
             ) from error
         except (KeyError, IndexError, TypeError) as error:
             raise RuntimeError("Gemini returned an empty or invalid response.") from error
-    raise RuntimeError(
-        f"Gemini could not use any discovered model ({last_error}). "
-        "Check the API key's Gemini model access and quota."
-    )
+    raise RuntimeError(f"Gemini request failed quickly: {last_error}")
 
 
+@lru_cache(maxsize=4)
 def _available_gemini_models(api_key: str, configured_model: str) -> list[str]:
     """Discover models enabled for this key instead of guessing model aliases."""
 
@@ -70,7 +74,7 @@ def _available_gemini_models(api_key: str, configured_model: str) -> list[str]:
     )
     request = Request(url, headers={"Accept": "application/json"})
     try:
-        with urlopen(request, timeout=20) as response:
+        with urlopen(request, timeout=8) as response:
             data = json.loads(response.read().decode("utf-8"))
         discovered = [
             item["name"].removeprefix("models/")

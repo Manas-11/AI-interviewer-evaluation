@@ -66,7 +66,7 @@ def _openai_reference(question: str) -> str | None:
     try:
         from openai import APIError, OpenAI
 
-        client = OpenAI(api_key=api_key)
+        client = OpenAI(api_key=api_key, timeout=12.0, max_retries=0)
         response: Any = client.responses.create(
             model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
             input=(

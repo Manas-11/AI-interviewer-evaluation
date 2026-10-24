@@ -360,7 +360,7 @@ def evaluate_answer_with_model(
     try:
         from openai import APIError, OpenAI
 
-        response = OpenAI(api_key=api_key).responses.create(
+        response = OpenAI(api_key=api_key, timeout=12.0, max_retries=0).responses.create(
             model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
             input=(
                 _semantic_evaluation_prompt(question, candidate_answer, reference_answer)
