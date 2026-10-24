@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import html
+import json
+from datetime import datetime, timezone
 
 import altair as alt
 import streamlit as st
@@ -11,6 +13,16 @@ from engine.evaluator import evaluate_answer
 from engine.reference import generate_reference_answer
 
 st.set_page_config(page_title="Interview Evaluator", layout="wide")
+
+
+def _performance_summary(percentage: float) -> tuple[str, str]:
+    if percentage >= 85:
+        return "Strong response", "The answer covers the expected ideas and communicates them clearly."
+    if percentage >= 70:
+        return "Good foundation", "The answer is on the right track, with a few concepts or details to strengthen."
+    if percentage >= 50:
+        return "Needs development", "The answer shows partial understanding but needs more complete reasoning."
+    return "Needs significant improvement", "The response needs stronger technical coverage and clearer explanation."
 
 st.markdown(
     """
@@ -436,8 +448,18 @@ with st.sidebar:
 
 st.markdown('<div class="workflow-heading">Evaluate a candidate answer</div>', unsafe_allow_html=True)
 st.markdown('<p class="hint">Start with a question. The reference answer can be generated automatically and edited before scoring.</p>', unsafe_allow_html=True)
-question = st.text_area("Interview question", placeholder="e.g. What is dependency injection?", height=90)
-answer = st.text_area("Candidate answer", height=145, placeholder="Paste or type the candidate's response here...")
+question = st.text_area(
+    "Interview question",
+    placeholder="e.g. What is dependency injection?",
+    height=90,
+    key="question_input",
+)
+answer = st.text_area(
+    "Candidate answer",
+    height=145,
+    placeholder="Paste or type the candidate's response here...",
+    key="candidate_answer_input",
+)
 if "generated_reference" not in st.session_state:
     st.session_state.generated_reference = ""
 reference = st.text_area(
@@ -445,6 +467,7 @@ reference = st.text_area(
     value=st.session_state.generated_reference,
     height=145,
     help="Generated from the question. You may edit it before scoring.",
+    key="reference_input",
 )
 generate_clicked, evaluate_clicked = st.columns([1, 1])
 with generate_clicked:
@@ -463,6 +486,11 @@ with generate_clicked:
             st.rerun()
 with evaluate_clicked:
     should_evaluate = st.button("Evaluate answer", type="primary", use_container_width=True)
+reset_clicked = st.button("Start a new evaluation", use_container_width=True)
+if reset_clicked:
+    for key in ("question_input", "candidate_answer_input", "reference_input", "generated_reference"):
+        st.session_state.pop(key, None)
+    st.rerun()
 if should_evaluate:
     try:
         if not reference.strip():
@@ -481,6 +509,8 @@ if should_evaluate:
         st.error(str(error))
     else:
         st.markdown("### Evaluation snapshot")
+        summary_title, summary_text = _performance_summary(result["percentage"])
+        st.info(f"**{summary_title}** — {summary_text}")
         summary = st.columns(2)
         summary[0].metric("Overall score", f"{result['total_score']}/{result['maximum_score']}")
         summary[1].metric("Percentage", f"{result['percentage']}%")
@@ -581,3 +611,17 @@ if should_evaluate:
                 f'<h5>Missing concept statements</h5>{missing_items}</div>',
                 unsafe_allow_html=True,
             )
+        report = {
+            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "question": question,
+            "candidate_answer": answer,
+            "reference_answer": reference,
+            "evaluation": result,
+        }
+        st.download_button(
+            "Download evaluation report",
+            data=json.dumps(report, indent=2, ensure_ascii=True),
+            file_name="interview-evaluation-report.json",
+            mime="application/json",
+            use_container_width=True,
+        )
