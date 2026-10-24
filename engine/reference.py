@@ -6,7 +6,6 @@ import os
 import re
 from typing import Any
 
-from engine.providers import gemini_generate
 
 def _clean_question(question: str) -> str:
     if not isinstance(question, str) or not question.strip():
@@ -92,14 +91,6 @@ def _openai_reference(question: str) -> str | None:
         ) from error
 
 
-def _gemini_reference(question: str) -> str:
-    return gemini_generate(
-        "Create a concise, technically accurate reference answer for an interview "
-        "evaluator. Include essential concepts, trade-offs, and an example when "
-        f"relevant. Do not grade the candidate. Question: {question}"
-    )
-
-
 def generate_reference_answer(question: str) -> dict[str, str | bool]:
     """Generate a reference answer from a question.
 
@@ -120,17 +111,7 @@ def generate_reference_answer(question: str) -> dict[str, str | bool]:
             openai_warning = "OpenAI returned an empty answer."
     else:
         openai_warning = ""
-    if os.getenv("GEMINI_API_KEY"):
-        try:
-            answer = _gemini_reference(question)
-            return {"answer": answer, "source": "Gemini", "is_model_generated": True}
-        except RuntimeError as error:
-            gemini_warning = str(error)
-            warning = f"OpenAI unavailable: {openai_warning}; Gemini unavailable: {gemini_warning}"
-        else:
-            warning = f"OpenAI unavailable: {openai_warning}"
-    else:
-        warning = f"OpenAI unavailable: {openai_warning}" if openai_warning else ""
+    warning = f"OpenAI unavailable: {openai_warning}" if openai_warning else ""
     fallback = {
         "answer": _local_reference(question),
         "source": "Local fallback",

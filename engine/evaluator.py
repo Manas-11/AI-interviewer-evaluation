@@ -14,7 +14,6 @@ from collections.abc import Iterable
 from difflib import SequenceMatcher
 from typing import Any
 
-from engine.providers import gemini_generate
 _TOKEN_RE = re.compile(r"[A-Za-z0-9]+(?:[+#][A-Za-z0-9]+|[.-][A-Za-z0-9]+)*")
 _STOP_WORDS = {
     "a", "an", "and", "are", "as", "at", "be", "by", "for", "from",
@@ -338,7 +337,7 @@ def evaluate_answer_with_model(
                 not isinstance(scores[key], int) or not 0 <= scores[key] <= 10
                 for key in _CRITERIA
             ):
-                raise ValueError("Gemini returned invalid scores.")
+                raise ValueError("OpenAI returned invalid scores.")
             total = sum(scores.values())
             return {
                 **baseline,
@@ -363,17 +362,4 @@ def evaluate_answer_with_model(
                 "the local meaning-aware evaluation was used instead."
             )
             return baseline
-    if os.getenv("GEMINI_API_KEY") and candidate_answer.strip():
-        try:
-            raw = gemini_generate(_semantic_evaluation_prompt(question, candidate_answer, reference_answer))
-            parsed = json.loads(raw.strip().removeprefix("```json").removesuffix("```").strip())
-            scores = parsed["scores"]
-            if set(scores) != set(_CRITERIA):
-                raise ValueError("Gemini returned invalid scores.")
-            total = sum(scores.values())
-            return {**baseline, "scores": scores, "total_score": total,
-                    "percentage": round(total / 40 * 100, 1),
-                    "evaluation_source": "Gemini semantic evaluation"}
-        except (RuntimeError, KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
-            baseline["evaluation_warning"] = f"{error} The local meaning-aware evaluation was used instead."
     return baseline

@@ -29,16 +29,6 @@ def _load_openai_settings() -> bool:
                 os.environ["OPENAI_MODEL"] = str(secret_model).strip()
             return True
     except StreamlitSecretNotFoundError:
-        pass
-    try:
-        secret_key = st.secrets.get("GEMINI_API_KEY")
-        if secret_key:
-            os.environ["GEMINI_API_KEY"] = str(secret_key).strip()
-            secret_model = st.secrets.get("GEMINI_MODEL")
-            if secret_model:
-                os.environ["GEMINI_MODEL"] = str(secret_model).strip()
-            return True
-    except StreamlitSecretNotFoundError:
         return False
     return False
 
@@ -475,7 +465,7 @@ st.markdown(
 if model_configured:
     st.caption(
         "Semantic model grading is configured "
-        f"({os.getenv('OPENAI_MODEL', os.getenv('GEMINI_MODEL', 'gpt-4o-mini'))})."
+        f"({os.getenv('OPENAI_MODEL', 'gpt-4o-mini')})."
     )
 else:
     st.info(

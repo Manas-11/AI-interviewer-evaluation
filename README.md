@@ -4,8 +4,8 @@ A deployable Streamlit application for evaluating interview answers with a
 transparent, deterministic scoring baseline. It validates transcript data with
 Pydantic and scores answers across correctness, relevance, completeness, and
 clarity (0–10 each), while exposing matched and missing concepts as evidence.
-Reference answers are generated automatically from the question. If `OPENAI_API_KEY` is configured, the app uses OpenAI first. Gemini is an
-optional secondary provider; otherwise it uses a deterministic local fallback.
+Reference answers are generated automatically from the question. If `OPENAI_API_KEY` is configured, the app uses OpenAI; otherwise it uses a
+deterministic local fallback.
 
 The dashboard is focused on the primary workflow: evaluating one question and
 one candidate answer at a time. Transcript validation remains available in the
@@ -30,30 +30,24 @@ streamlit run app.py
 
 Open the URL printed by Streamlit, then use **Evaluate an answer**.
 
-To enable higher-quality model-generated reference answers with Gemini, set:
+To enable model-generated reference answers and semantic grading with OpenAI:
 
 ```powershell
-$env:GEMINI_API_KEY = "your-Gemini-api-key"
-$env:GEMINI_MODEL = "gemini-3.8-flash"
+$env:OPENAI_API_KEY = "your-openai-api-key"
+$env:OPENAI_MODEL = "gpt-4o-mini"
 ```
 
 For Streamlit Community Cloud, open **App settings → Secrets** and add TOML
 entries (do not commit this value to the repository):
 
 ```toml
-GEMINI_API_KEY = "your-gemini-api-key"
-GEMINI_MODEL = "gemini-3.8-flash"
+OPENAI_API_KEY = "your-openai-api-key"
+OPENAI_MODEL = "gpt-4o-mini"
 ```
 
 After saving the secrets, restart the app. The dashboard will show
-`Semantic model grading is configured` when the key is being loaded. A valid
-Gemini API key with Generative Language API access is required. Gemini Pro in
-the consumer app and Gemini API access are separate; create the key in Google
-AI Studio. OpenAI remains supported as a secondary provider by using
-`OPENAI_API_KEY` and `OPENAI_MODEL` instead.
-
-The app discovers the models enabled for the key and selects one that supports
-`generateContent`; it does not rely only on a hard-coded model alias.
+`Semantic model grading is configured` when the key is being loaded. A valid OpenAI API key with API access is required. ChatGPT access and OpenAI
+API access are separate.
 
 The candidate answer can remain manually entered. Leave the reference-answer
 field empty and it will be generated automatically from the question before
@@ -62,8 +56,8 @@ extend the rubric.
 
 The local meaning-aware evaluator is always available and evaluates concept
 coverage using phrase aliases, synonyms, fuzzy matching, and reference-derived
-concept statements. OpenAI provides the primary semantic pass, Gemini is optional, and an
-unavailable hosted model never prevents local evaluation from completing.
+concept statements. OpenAI provides the semantic pass, and an unavailable hosted model never
+prevents local evaluation from completing.
 
 After evaluation, the dashboard provides a plain-language performance summary,
 criterion-level deduction explanations, and concept evidence. Use **Start a
