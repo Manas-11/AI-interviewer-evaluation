@@ -16,8 +16,18 @@ st.set_page_config(page_title="Interview Evaluator", layout="wide")
 
 
 def _load_openai_settings() -> bool:
-    """Load OpenAI settings from Streamlit secrets without exposing the key."""
+    """Load hosted-model settings from Streamlit secrets without exposing keys."""
 
+    try:
+        secret_key = st.secrets.get("GEMINI_API_KEY")
+        if secret_key:
+            os.environ["GEMINI_API_KEY"] = str(secret_key).strip()
+            secret_model = st.secrets.get("GEMINI_MODEL")
+            if secret_model:
+                os.environ["GEMINI_MODEL"] = str(secret_model).strip()
+            return True
+    except StreamlitSecretNotFoundError:
+        pass
     if os.getenv("OPENAI_API_KEY"):
         return True
     try:
@@ -33,7 +43,7 @@ def _load_openai_settings() -> bool:
     return False
 
 
-openai_configured = _load_openai_settings()
+model_configured = _load_openai_settings()
 
 
 def _performance_summary(percentage: float) -> tuple[str, str]:
@@ -462,14 +472,15 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
-if openai_configured:
+if model_configured:
     st.caption(
-        f"Semantic model grading is configured ({os.getenv('OPENAI_MODEL', 'gpt-4o-mini')})."
+        "Semantic model grading is configured "
+        f"({os.getenv('GEMINI_MODEL', os.getenv('OPENAI_MODEL', 'gpt-4o-mini'))})."
     )
 else:
     st.info(
-        "Semantic model grading is not configured. Add OPENAI_API_KEY to "
-        "Streamlit Secrets to enable it; local meaning-aware grading remains available."
+        "Semantic model grading is not configured. Add GEMINI_API_KEY or "
+        "OPENAI_API_KEY to Streamlit Secrets; local meaning-aware grading remains available."
     )
 
 with st.sidebar:

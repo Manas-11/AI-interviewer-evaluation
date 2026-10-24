@@ -4,9 +4,8 @@ A deployable Streamlit application for evaluating interview answers with a
 transparent, deterministic scoring baseline. It validates transcript data with
 Pydantic and scores answers across correctness, relevance, completeness, and
 clarity (0–10 each), while exposing matched and missing concepts as evidence.
-Reference answers are generated automatically from the question. If
-`OPENAI_API_KEY` is configured, the app uses the selected OpenAI model;
-otherwise it uses a deterministic local fallback.
+Reference answers are generated automatically from the question. If `GEMINI_API_KEY` or `OPENAI_API_KEY` is configured, the app uses the selected
+hosted model; otherwise it uses a deterministic local fallback.
 
 The dashboard is focused on the primary workflow: evaluating one question and
 one candidate answer at a time. Transcript validation remains available in the
@@ -31,25 +30,27 @@ streamlit run app.py
 
 Open the URL printed by Streamlit, then use **Evaluate an answer**.
 
-To enable higher-quality model-generated reference answers, set:
+To enable higher-quality model-generated reference answers with Gemini, set:
 
 ```powershell
-$env:OPENAI_API_KEY = "your-key"
-$env:OPENAI_MODEL = "gpt-4o-mini"
+$env:GEMINI_API_KEY = "your-Gemini-api-key"
+$env:GEMINI_MODEL = "gemini-2.0-flash"
 ```
 
 For Streamlit Community Cloud, open **App settings → Secrets** and add TOML
 entries (do not commit this value to the repository):
 
 ```toml
-OPENAI_API_KEY = "sk-your-real-api-key"
-OPENAI_MODEL = "gpt-4o-mini"
+GEMINI_API_KEY = "your-gemini-api-key"
+GEMINI_MODEL = "gemini-2.0-flash"
 ```
 
 After saving the secrets, restart the app. The dashboard will show
 `Semantic model grading is configured` when the key is being loaded. A valid
-OpenAI API key with API billing/access is required; a ChatGPT Plus subscription
-does not automatically provide API access.
+Gemini API key with Generative Language API access is required. Gemini Pro in
+the consumer app and Gemini API access are separate; create the key in Google
+AI Studio. OpenAI remains supported as a secondary provider by using
+`OPENAI_API_KEY` and `OPENAI_MODEL` instead.
 
 The candidate answer can remain manually entered. Leave the reference-answer
 field empty and it will be generated automatically from the question before

@@ -14,6 +14,7 @@ from collections.abc import Iterable
 from difflib import SequenceMatcher
 from typing import Any
 
+from engine.providers import gemini_generate
 _TOKEN_RE = re.compile(r"[A-Za-z0-9]+(?:[+#][A-Za-z0-9]+|[.-][A-Za-z0-9]+)*")
 _STOP_WORDS = {
     "a", "an", "and", "are", "as", "at", "be", "by", "for", "from",
@@ -292,6 +293,46 @@ def evaluate_answer_with_model(
     """
 
     baseline = evaluate_answer(question, candidate_answer, reference_answer)
+    if os.getenv("GEMINI_API_KEY") and candidate_answer.strip():
+        try:
+            raw = gemini_generate(
+                "Evaluate this interview answer semantically. Give credit for "
+                "accurate paraphrases, not just shared words. Use only evidence "
+                "from the candidate answer. Return JSON only with this shape: "
+                '{"scores":{"correctness":0,"relevance":0,"completeness":0,"clarity":0},'
+                '"matched_concepts":[],"missing_concepts":[],"score_reasons":{},'
+                '"feedback":[]}. Scores must be integers from 0 to 10. '
+                f"Question: {question}\nCandidate answer: {candidate_answer}\n"
+                f"Reference answer: {reference_answer}"
+            )
+            parsed = json.loads(raw.strip().removeprefix("```json").removesuffix("```").strip())
+            scores = parsed["scores"]
+            if set(scores) != set(_CRITERIA) or any(
+                not isinstance(scores[key], int) or not 0 <= scores[key] <= 10
+                for key in _CRITERIA
+            ):
+                raise ValueError("Gemini returned invalid scores.")
+            total = sum(scores.values())
+            return {
+                **baseline,
+                "scores": scores,
+                "total_score": total,
+                "percentage": round(total / 40 * 100, 1),
+                "matched_concepts": [x for x in parsed.get("matched_concepts", []) if isinstance(x, str)],
+                "missing_concepts": [x for x in parsed.get("missing_concepts", []) if isinstance(x, str)],
+                "score_reasons": {
+                    criterion: str(parsed.get("score_reasons", {}).get(
+                        criterion, baseline["score_reasons"][criterion]
+                    ))
+                    for criterion in _CRITERIA
+                },
+                "feedback": [x for x in parsed.get("feedback", []) if isinstance(x, str)]
+                    or baseline["feedback"],
+                "evaluation_source": "Gemini semantic evaluation",
+            }
+        except (RuntimeError, KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
+            baseline["evaluation_warning"] = f"{error} The local meaning-aware evaluation was used instead."
+            return baseline
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key or not candidate_answer.strip():
         return baseline
