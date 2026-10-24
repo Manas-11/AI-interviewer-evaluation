@@ -88,8 +88,8 @@ st.markdown(
         margin-bottom: 1rem;
     }
     .score-card {
-        background: rgba(255, 255, 255, .84);
-        border: 1px solid rgba(255, 255, 255, .9);
+        background: linear-gradient(145deg, #173f5f 0%, #206b82 100%);
+        border: 1px solid rgba(255, 255, 255, .25);
         backdrop-filter: blur(10px);
         border-radius: 16px;
         padding: 1rem 1.1rem;
@@ -97,14 +97,14 @@ st.markdown(
         box-shadow: 0 6px 18px rgba(16, 42, 67, .05);
     }
     .score-name {
-        color: #627d98;
+        color: #bcebe7;
         font-size: .76rem;
         font-weight: 700;
         letter-spacing: .08em;
         text-transform: uppercase;
     }
     .score-value {
-        color: #102a43;
+        color: #ffffff;
         font-size: 1.9rem;
         font-weight: 800;
         line-height: 1.25;
@@ -145,12 +145,26 @@ st.markdown(
         color: #102a43 !important;
     }
     div[data-testid="stMetric"] {
-        background: rgba(255, 255, 255, .82);
-        border: 1px solid rgba(255, 255, 255, .9);
+        background: linear-gradient(145deg, #102a43 0%, #176b87 100%);
+        border: 1px solid rgba(255, 255, 255, .28);
         backdrop-filter: blur(10px);
         border-radius: 16px;
         padding: 1rem 1.2rem;
         box-shadow: 0 6px 18px rgba(16, 42, 67, .05);
+    }
+    div[data-testid="stMetric"] label,
+    div[data-testid="stMetric"] [data-testid="stMetricLabel"],
+    div[data-testid="stMetric"] [data-testid="stMetricLabel"] p {
+        color: #bcebe7 !important;
+        font-weight: 700 !important;
+    }
+    div[data-testid="stMetric"] [data-testid="stMetricValue"],
+    div[data-testid="stMetric"] [data-testid="stMetricValue"] div {
+        color: #ffffff !important;
+        font-weight: 800 !important;
+    }
+    div[data-testid="stMetric"] [data-testid="stMetricDelta"] {
+        color: #d8f8f2 !important;
     }
     div[data-baseweb="tab-list"] {
         gap: .5rem;
