@@ -26,6 +26,34 @@ st.markdown(
         animation: ambient-shift 18s ease-in-out infinite alternate;
         background-attachment: fixed;
         color: #172b40;
+        scroll-behavior: smooth;
+        overscroll-behavior-y: none;
+        -webkit-overflow-scrolling: touch;
+    }
+    [data-testid="stAppViewContainer"] > section,
+    [data-testid="stAppViewContainer"] .main,
+    .main {
+        scroll-behavior: smooth;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(23, 107, 135, .65) rgba(255, 255, 255, .35);
+    }
+    [data-testid="stAppViewContainer"] > section::-webkit-scrollbar,
+    [data-testid="stAppViewContainer"] .main::-webkit-scrollbar,
+    .main::-webkit-scrollbar {
+        width: 10px;
+    }
+    [data-testid="stAppViewContainer"] > section::-webkit-scrollbar-track,
+    [data-testid="stAppViewContainer"] .main::-webkit-scrollbar-track,
+    .main::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, .28);
+        border-radius: 99px;
+    }
+    [data-testid="stAppViewContainer"] > section::-webkit-scrollbar-thumb,
+    [data-testid="stAppViewContainer"] .main::-webkit-scrollbar-thumb,
+    .main::-webkit-scrollbar-thumb {
+        background: linear-gradient(180deg, #176b87, #35b5a5);
+        border: 2px solid rgba(255, 255, 255, .35);
+        border-radius: 99px;
     }
     [data-testid="stAppViewContainer"] {
         min-height: 100vh;
@@ -322,7 +350,8 @@ st.markdown(
         transform: translateY(0);
     }
     [data-testid="stMetric"], .score-card, .evidence-card {
-        animation: soft-enter .45s ease both;
+        animation: soft-enter .6s cubic-bezier(.22, 1, .36, 1) both;
+        will-change: transform, opacity;
     }
     @keyframes ambient-shift {
         0% { background-position: 0% 0%; }
