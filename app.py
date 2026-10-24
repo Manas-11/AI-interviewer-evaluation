@@ -171,6 +171,39 @@ st.markdown(
         border: 1px solid rgba(16, 42, 67, .15);
         border-radius: 14px;
     }
+    .evidence-card {
+        border-radius: 14px;
+        padding: 1rem 1.1rem;
+        min-height: 115px;
+        box-shadow: 0 7px 18px rgba(16, 42, 67, .10);
+    }
+    .evidence-card h5 {
+        margin: 0 0 .7rem;
+        font-size: .85rem;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+    .evidence-card p {
+        margin: .45rem 0;
+        line-height: 1.45;
+        font-size: .9rem;
+    }
+    .matched-evidence {
+        background: linear-gradient(145deg, #123d52, #176b87);
+        border: 1px solid rgba(158, 231, 220, .45);
+        color: #effffc;
+    }
+    .matched-evidence h5 {
+        color: #9ee7dc;
+    }
+    .missing-evidence {
+        background: linear-gradient(145deg, #65451f, #9a6a28);
+        border: 1px solid rgba(255, 224, 164, .6);
+        color: #fff8e8;
+    }
+    .missing-evidence h5 {
+        color: #ffe0a4;
+    }
     [data-testid="stAlert"] p {
         color: #102a43 !important;
     }
@@ -353,7 +386,19 @@ if should_evaluate:
             st.markdown(f"✅ {item}")
         with st.expander("Evidence and missing concepts"):
             evidence_left, evidence_right = st.columns(2)
-            evidence_left.markdown("**Matched concept statements**")
-            evidence_left.info(", ".join(result["matched_concepts"]) or "None")
-            evidence_right.markdown("**Missing concept statements**")
-            evidence_right.warning(", ".join(result["missing_concepts"]) or "None")
+            matched_items = "".join(
+                f"<p>✓ {concept}</p>" for concept in result["matched_concepts"]
+            ) or "<p>No supported concept statements found.</p>"
+            missing_items = "".join(
+                f"<p>＋ {concept}</p>" for concept in result["missing_concepts"]
+            ) or "<p>No missing concept statements.</p>"
+            evidence_left.markdown(
+                f'<div class="evidence-card matched-evidence">'
+                f'<h5>✓ Matched concept statements</h5>{matched_items}</div>',
+                unsafe_allow_html=True,
+            )
+            evidence_right.markdown(
+                f'<div class="evidence-card missing-evidence">'
+                f'<h5>＋ Missing concept statements</h5>{missing_items}</div>',
+                unsafe_allow_html=True,
+            )
