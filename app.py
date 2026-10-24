@@ -107,6 +107,13 @@ st.markdown(
         margin: 0;
         max-width: 720px;
     }
+    .workflow-heading {
+        color: #102a43;
+        font-size: 1.55rem;
+        font-weight: 800;
+        letter-spacing: -.01em;
+        margin: .5rem 0 .35rem;
+    }
     .section-card {
         background: rgba(255, 255, 255, .78);
         border: 1px solid rgba(255, 255, 255, .85);
@@ -288,14 +295,28 @@ st.markdown(
         color: #102a43 !important;
     }
     .stButton > button {
+        background: linear-gradient(135deg, #176b87 0%, #35a99b 100%);
+        border: 1px solid rgba(16, 42, 67, .18);
         border-radius: 12px;
+        color: #ffffff !important;
+        font-size: .98rem;
         min-height: 2.8rem;
         font-weight: 700;
         transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
     }
+    .stButton > button p,
+    .stButton > button div {
+        color: #ffffff !important;
+        font-weight: 800 !important;
+    }
     .stButton > button:hover {
+        background: linear-gradient(135deg, #125873 0%, #278f84 100%);
         transform: translateY(-2px);
         box-shadow: 0 8px 18px rgba(16, 42, 67, .16);
+    }
+    .stButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #102a43 0%, #176b87 100%);
+        border-color: #102a43;
     }
     .stButton > button:active {
         transform: translateY(0);
@@ -384,7 +405,7 @@ with st.sidebar:
     st.metric("Scoring criteria", "4 × 10", help="Correctness, relevance, completeness, and clarity.")
     st.caption("Human review remains essential for hiring decisions.")
 
-st.markdown("### Evaluate a candidate answer")
+st.markdown('<div class="workflow-heading">Evaluate a candidate answer</div>', unsafe_allow_html=True)
 st.markdown('<p class="hint">Start with a question. The reference answer can be generated automatically and edited before scoring.</p>', unsafe_allow_html=True)
 question = st.text_area("Interview question", placeholder="e.g. What is dependency injection?", height=90)
 answer = st.text_area("Candidate answer", height=145, placeholder="Paste or type the candidate's response here...")
