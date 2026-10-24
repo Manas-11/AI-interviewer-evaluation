@@ -29,7 +29,10 @@ st.markdown(
         min-height: 100vh;
     }
     .block-container {
-        padding-bottom: 4rem;
+        padding-top: 2rem;
+        padding-bottom: 5rem;
+        max-width: 1180px;
+        transition: padding .25s ease;
     }
     .stApp::before {
         content: "";
@@ -53,8 +56,13 @@ st.markdown(
             radial-gradient(circle at 88% 10%, rgba(255, 255, 255, .25), transparent 11rem),
             linear-gradient(120deg, #102a43 0%, #176b87 55%, #35b5a5 100%);
         color: white;
-        box-shadow: 0 14px 35px rgba(16, 42, 67, .16);
+        box-shadow: 0 16px 38px rgba(16, 42, 67, .18);
         margin-bottom: 1.6rem;
+        transition: transform .3s ease, box-shadow .3s ease;
+    }
+    .hero:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 20px 44px rgba(16, 42, 67, .22);
     }
     .hero::after {
         content: "";
@@ -171,6 +179,13 @@ st.markdown(
         color: #102a43 !important;
         border: 1px solid rgba(16, 42, 67, .24);
         border-radius: 12px;
+        transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+    [data-testid="stTextArea"] textarea:focus {
+        background: #ffffff;
+        border-color: #35b5a5 !important;
+        box-shadow: 0 0 0 3px rgba(53, 181, 165, .20) !important;
+        outline: none;
     }
     [data-testid="stTextArea"] textarea::placeholder {
         color: #627d98 !important;
@@ -180,6 +195,12 @@ st.markdown(
         background: rgba(255, 255, 255, .78);
         border: 1px solid rgba(16, 42, 67, .15);
         border-radius: 14px;
+        transition: background .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+    [data-testid="stExpander"]:hover {
+        background: rgba(255, 255, 255, .9);
+        border-color: rgba(23, 107, 135, .30);
+        box-shadow: 0 8px 20px rgba(16, 42, 67, .10);
     }
     .evidence-card {
         border-radius: 14px;
@@ -240,6 +261,26 @@ st.markdown(
     }
     [data-testid="stAlert"] p {
         color: #102a43 !important;
+    }
+    .stButton > button {
+        border-radius: 12px;
+        min-height: 2.8rem;
+        font-weight: 700;
+        transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 18px rgba(16, 42, 67, .16);
+    }
+    .stButton > button:active {
+        transform: translateY(0);
+    }
+    [data-testid="stMetric"], .score-card, .evidence-card {
+        animation: soft-enter .45s ease both;
+    }
+    @keyframes soft-enter {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     footer, [data-testid="stDecoration"], [data-testid="stStatusWidget"] {
         display: none !important;
