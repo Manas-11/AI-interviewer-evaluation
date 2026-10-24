@@ -36,7 +36,10 @@ def gemini_generate(prompt: str) -> str:
         try:
             with urlopen(request, timeout=45) as response:
                 data = json.loads(response.read().decode("utf-8"))
-            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            text = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            if not text:
+                raise RuntimeError("Gemini returned an empty response.")
+            return text
         except HTTPError as error:
             try:
                 detail = error.read().decode("utf-8")[:300]

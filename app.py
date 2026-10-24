@@ -565,6 +565,10 @@ if should_evaluate:
             )
         st.markdown("### Evaluation snapshot")
         st.caption(f"Evaluation method: {result['evaluation_source']}")
+        st.caption(
+            "The candidate response is compared with the reference by meaning "
+            "and required concepts, not by exact wording."
+        )
         summary_title, summary_text = _performance_summary(result["percentage"])
         st.info(f"**{summary_title}** — {summary_text}")
         summary = st.columns(2)
