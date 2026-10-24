@@ -102,6 +102,53 @@ def _feedback(scores: dict[str, int], answer: str, reference: str) -> list[str]:
     return feedback
 
 
+def _score_reasons(
+    scores: dict[str, int],
+    matched_concepts: list[str],
+    missing_concepts: list[str],
+    answer: str,
+) -> dict[str, str]:
+    """Explain deductions in plain language for every scoring criterion."""
+
+    reasons: dict[str, str] = {}
+    if scores["correctness"] >= 8:
+        reasons["correctness"] = "No major deduction: the response aligns well with the expected concepts."
+    elif missing_concepts:
+        reasons["correctness"] = (
+            f"Deducted because {len(missing_concepts)} expected concept(s) were not supported: "
+            f"{'; '.join(missing_concepts[:2])}."
+        )
+    else:
+        reasons["correctness"] = "Deducted because the response contains limited evidence of the expected technical concepts."
+
+    if scores["relevance"] >= 8:
+        reasons["relevance"] = "No major deduction: the response stays focused on the question."
+    else:
+        reasons["relevance"] = (
+            "Deducted because the answer does not address enough of the question's key terms "
+            "or includes insufficient direct explanation."
+        )
+
+    if scores["completeness"] >= 8:
+        reasons["completeness"] = "No major deduction: the important reference concepts are covered."
+    elif missing_concepts:
+        reasons["completeness"] = (
+            f"Deducted because {len(missing_concepts)} reference concept(s) are missing. "
+            "Review the missing concept statements below."
+        )
+    else:
+        reasons["completeness"] = "Deducted because the answer covers only part of the expected explanation."
+
+    word_count = len(answer.split())
+    if scores["clarity"] >= 8:
+        reasons["clarity"] = "No major deduction: the response is structured and easy to follow."
+    elif word_count < 5:
+        reasons["clarity"] = "Deducted because the response is too short to explain the reasoning clearly."
+    else:
+        reasons["clarity"] = "Deducted because the response would benefit from clearer structure, explanation, or an example."
+    return reasons
+
+
 def evaluate_answer(
     question: str,
     candidate_answer: str,
@@ -126,6 +173,10 @@ def evaluate_answer(
             "maximum_score": 40,
             "percentage": 0.0,
             "feedback": ["No answer was provided."],
+            "score_reasons": {
+                criterion: "No score awarded because no candidate answer was provided."
+                for criterion in _CRITERIA
+            },
             "matched_concepts": [],
             "missing_concepts": sorted(_tokens(reference_answer)),
         }
@@ -163,12 +214,14 @@ def evaluate_answer(
         "clarity": clarity,
     }
     total = sum(scores.values())
+    score_reasons = _score_reasons(scores, matched, missing, candidate_answer)
     return {
         "scores": scores,
         "total_score": total,
         "maximum_score": 40,
         "percentage": round(total / 40 * 100, 1),
         "feedback": _feedback(scores, candidate_answer, reference_answer),
+        "score_reasons": score_reasons,
         "matched_concepts": matched,
         "missing_concepts": missing,
     }

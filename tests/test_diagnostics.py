@@ -19,12 +19,28 @@ def test_evaluate_answer_returns_bounded_scores_and_evidence():
     assert result["maximum_score"] == 40
     assert result["matched_concepts"] or result["missing_concepts"]
     assert all(len(concept.split()) > 1 for concept in result["matched_concepts"])
+    assert set(result["score_reasons"]) == set(result["scores"])
+    assert all(result["score_reasons"].values())
 
 
 def test_empty_answer_is_safe_and_explicit():
     result = evaluate_answer("Explain caching", "", "Caching stores reusable results.")
     assert result["total_score"] == 0
     assert result["feedback"] == ["No answer was provided."]
+    assert all("No score awarded" in reason for reason in result["score_reasons"].values())
+
+
+def test_score_reasons_explain_deductions():
+    result = evaluate_answer(
+        "Explain caching and its trade-offs.",
+        "Caching makes things faster.",
+        "Caching stores reusable results to reduce latency. A complete answer "
+        "should discuss invalidation, stale data, TTL, and consistency trade-offs.",
+    )
+
+    assert "Deducted" in result["score_reasons"]["correctness"]
+    assert "Deducted" in result["score_reasons"]["completeness"]
+    assert "Deducted" in result["score_reasons"]["clarity"]
 
 
 def test_evidence_uses_concept_statements_and_supports_paraphrases():

@@ -307,6 +307,7 @@ with tab_single:
                         f'</div>',
                         unsafe_allow_html=True,
                     )
+                    column.caption(f"Why this score: {result['score_reasons'][criterion]}")
             st.markdown('<h3 class="chart-heading">Score breakdown</h3>', unsafe_allow_html=True)
             chart_data = [
                 {"Criterion": criterion.title(), "Score": score}
