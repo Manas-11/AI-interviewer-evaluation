@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+import altair as alt
 import streamlit as st
 from pydantic import ValidationError
 
@@ -141,6 +142,11 @@ st.markdown(
     .criterion-heading {
         margin-top: 1.8rem;
         margin-bottom: .8rem;
+        color: #102a43;
+    }
+    .chart-heading {
+        margin-top: 1.8rem;
+        margin-bottom: .4rem;
         color: #102a43;
     }
     .hint {
@@ -301,8 +307,54 @@ with tab_single:
                         f'</div>',
                         unsafe_allow_html=True,
                     )
-            st.markdown("### Score breakdown")
-            st.bar_chart(result["scores"], horizontal=True, height=220)
+            st.markdown('<h3 class="chart-heading">Score breakdown</h3>', unsafe_allow_html=True)
+            chart_data = [
+                {"Criterion": criterion.title(), "Score": score}
+                for criterion, score in result["scores"].items()
+            ]
+            score_chart = (
+                alt.Chart(alt.Data(values=chart_data))
+                .mark_bar(
+                    cornerRadiusTopRight=8,
+                    cornerRadiusBottomRight=8,
+                    color="#176b87",
+                )
+                .encode(
+                    y=alt.Y(
+                        "Criterion:N",
+                        sort=None,
+                        title=None,
+                        axis=alt.Axis(
+                            labelColor="#102a43",
+                            labelFontSize=13,
+                            labelFontWeight="bold",
+                            labelPadding=10,
+                            ticks=False,
+                            domain=False,
+                        ),
+                    ),
+                    x=alt.X(
+                        "Score:Q",
+                        title="Score out of 10",
+                        scale=alt.Scale(domain=[0, 10]),
+                        axis=alt.Axis(
+                            labelColor="#486581",
+                            titleColor="#102a43",
+                            gridColor="#c9d6e3",
+                            tickColor="#9fb3c8",
+                            titlePadding=12,
+                        ),
+                    ),
+                    tooltip=[
+                        alt.Tooltip("Criterion:N", title="Criterion"),
+                        alt.Tooltip("Score:Q", title="Score", format=".0f"),
+                    ],
+                )
+                .properties(height=220, background="transparent")
+                .configure_view(stroke=None)
+                .configure_axis(gridOpacity=.65)
+            )
+            st.altair_chart(score_chart, use_container_width=True)
             st.markdown("### Actionable feedback")
             for item in result["feedback"]:
                 st.markdown(f"✅ {item}")
