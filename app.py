@@ -14,36 +14,128 @@ from evaluation.transcript import process_transcript
 
 st.set_page_config(page_title="Interview Evaluator", page_icon="🎯", layout="wide")
 
-st.title("🎯 Interview Evaluator")
-st.caption("A transparent, deterministic baseline for structured interview feedback.")
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background: #f7f9fc;
+    }
+    [data-testid="stHeader"] {
+        background: transparent;
+    }
+    .hero {
+        padding: 2.2rem 2.4rem;
+        border-radius: 24px;
+        background: linear-gradient(120deg, #102a43 0%, #176b87 55%, #35b5a5 100%);
+        color: white;
+        box-shadow: 0 14px 35px rgba(16, 42, 67, .16);
+        margin-bottom: 1.6rem;
+    }
+    .hero-kicker {
+        color: #9ee7dc;
+        font-size: .78rem;
+        font-weight: 700;
+        letter-spacing: .13em;
+        text-transform: uppercase;
+    }
+    .hero h1 {
+        margin: .45rem 0 .35rem;
+        color: white;
+        font-size: 2.35rem;
+    }
+    .hero p {
+        color: #e5f4f5;
+        font-size: 1.05rem;
+        margin: 0;
+        max-width: 720px;
+    }
+    .section-card {
+        background: white;
+        border: 1px solid #e3eaf1;
+        border-radius: 18px;
+        padding: 1.2rem 1.35rem .8rem;
+        box-shadow: 0 8px 24px rgba(16, 42, 67, .05);
+        margin-bottom: 1rem;
+    }
+    .score-card {
+        background: white;
+        border: 1px solid #e3eaf1;
+        border-radius: 16px;
+        padding: 1rem 1.1rem;
+        min-height: 94px;
+        box-shadow: 0 6px 18px rgba(16, 42, 67, .05);
+    }
+    .score-name {
+        color: #627d98;
+        font-size: .76rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+    }
+    .score-value {
+        color: #102a43;
+        font-size: 1.9rem;
+        font-weight: 800;
+        line-height: 1.25;
+    }
+    .score-value span {
+        color: #829ab1;
+        font-size: .9rem;
+        font-weight: 500;
+    }
+    .hint {
+        color: #627d98;
+        font-size: .9rem;
+    }
+    div[data-testid="stMetric"] {
+        background: white;
+        border: 1px solid #e3eaf1;
+        border-radius: 16px;
+        padding: 1rem 1.2rem;
+        box-shadow: 0 6px 18px rgba(16, 42, 67, .05);
+    }
+    </style>
+    <div class="hero">
+      <div class="hero-kicker">Interview intelligence · transparent evaluation</div>
+      <h1>🎯 Interview Evaluator</h1>
+      <p>Turn a question and candidate response into clear, evidence-backed feedback in seconds.</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 with st.sidebar:
-    st.header("About this evaluator")
+    st.markdown("## 🎯 Interview Evaluator")
+    st.caption("A calm, explainable workspace for structured interview review.")
+    st.divider()
+    st.markdown("### How it works")
     st.write(
-        "Scores are based on explainable concept overlap and response structure. "
-        "Use the evidence panels to review every result; this tool should support, "
-        "not replace, human hiring decisions."
+        "1. Add the question and candidate answer.\n"
+        "2. Generate the reference answer.\n"
+        "3. Review scores and evidence."
     )
     st.divider()
-    st.metric("Scoring criteria", "4 × 10")
+    st.metric("Scoring criteria", "4 × 10", help="Correctness, relevance, completeness, and clarity.")
+    st.caption("Human review remains essential for hiring decisions.")
 
 tab_single, tab_transcript = st.tabs(["Evaluate an answer", "Validate a transcript"])
 
 with tab_single:
-    st.subheader("Single-answer evaluation")
-    question = st.text_area("Interview question", placeholder="e.g. What is dependency injection?")
-    answer = st.text_area("Candidate answer", height=160)
+    st.markdown("### Evaluate a candidate answer")
+    st.markdown('<p class="hint">Start with a question. The reference answer can be generated automatically and edited before scoring.</p>', unsafe_allow_html=True)
+    question = st.text_area("Interview question", placeholder="e.g. What is dependency injection?", height=90)
+    answer = st.text_area("Candidate answer", height=145, placeholder="Paste or type the candidate's response here...")
     if "generated_reference" not in st.session_state:
         st.session_state.generated_reference = ""
     reference = st.text_area(
         "Reference answer / expected concepts (generated automatically)",
         value=st.session_state.generated_reference,
-        height=160,
+        height=145,
         help="Generated from the question. You may edit it before scoring.",
     )
-    generate_clicked, evaluate_clicked = st.columns(2)
+    generate_clicked, evaluate_clicked = st.columns([1, 1])
     with generate_clicked:
-        if st.button("Generate reference answer"):
+        if st.button("✨ Generate reference answer", use_container_width=True):
             try:
                 generated = generate_reference_answer(question)
             except (RuntimeError, TypeError, ValueError) as error:
@@ -53,7 +145,7 @@ with tab_single:
                 st.success(f"Reference generated using {generated['source']}.")
                 st.rerun()
     with evaluate_clicked:
-        should_evaluate = st.button("Evaluate answer", type="primary")
+        should_evaluate = st.button("🚀 Evaluate answer", type="primary", use_container_width=True)
     if should_evaluate:
         try:
             if not reference.strip():
@@ -67,23 +159,31 @@ with tab_single:
         except (RuntimeError, TypeError, ValueError) as error:
             st.error(str(error))
         else:
-            left, right = st.columns(2)
-            with left:
-                st.metric("Total score", f"{result['total_score']} / {result['maximum_score']}")
-            with right:
-                st.metric("Percentage", f"{result['percentage']}%")
-            st.subheader("Scores")
-            st.bar_chart(result["scores"], horizontal=True)
-            st.subheader("Actionable feedback")
+            st.markdown("### Evaluation snapshot")
+            summary = st.columns(5)
+            summary[0].metric("Overall", f"{result['total_score']}/{result['maximum_score']}")
+            summary[1].metric("Percentage", f"{result['percentage']}%")
+            for index, (criterion, score) in enumerate(result["scores"].items(), start=2):
+                summary[index].markdown(
+                    f'<div class="score-card"><div class="score-name">{criterion}</div>'
+                    f'<div class="score-value">{score}<span> / 10</span></div></div>',
+                    unsafe_allow_html=True,
+                )
+            st.markdown("### Score breakdown")
+            st.bar_chart(result["scores"], horizontal=True, height=220)
+            st.markdown("### Actionable feedback")
             for item in result["feedback"]:
-                st.write(f"- {item}")
+                st.markdown(f"✅ {item}")
             with st.expander("Evidence and missing concepts"):
-                st.write("Matched concepts:", ", ".join(result["matched_concepts"]) or "None")
-                st.write("Missing concepts:", ", ".join(result["missing_concepts"]) or "None")
+                evidence_left, evidence_right = st.columns(2)
+                evidence_left.markdown("**Matched concepts**")
+                evidence_left.info(", ".join(result["matched_concepts"]) or "None")
+                evidence_right.markdown("**Missing concepts**")
+                evidence_right.warning(", ".join(result["missing_concepts"]) or "None")
 
 with tab_transcript:
-    st.subheader("Transcript validation")
-    st.write("Paste JSON matching `role`, `instructions`, and a `transcript` list.")
+    st.markdown("### Validate an interview transcript")
+    st.markdown('<p class="hint">Check transcript structure before sending it into a broader evaluation workflow.</p>', unsafe_allow_html=True)
     example = {
         "role": "Backend Developer",
         "instructions": "Assess technical reasoning and communication.",
