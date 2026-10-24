@@ -63,7 +63,7 @@ def _openai_reference(question: str) -> str | None:
     if not api_key:
         return None
     try:
-        from openai import OpenAI
+        from openai import APIError, OpenAI
 
         client = OpenAI(api_key=api_key)
         response: Any = client.responses.create(
@@ -79,9 +79,15 @@ def _openai_reference(question: str) -> str | None:
         )
         answer = response.output_text.strip()
         return answer or None
-    except Exception as error:
+    except ImportError as error:
         raise RuntimeError(
-            "Reference generation failed while calling the configured model."
+            "The OpenAI package is not installed. Remove OPENAI_API_KEY or redeploy "
+            "after installing requirements.txt."
+        ) from error
+    except (APIError, TypeError, ValueError) as error:
+        raise RuntimeError(
+            "The configured OpenAI model could not generate a reference answer. "
+            "Check OPENAI_API_KEY, OPENAI_MODEL, and account access."
         ) from error
 
 
@@ -94,7 +100,15 @@ def generate_reference_answer(question: str) -> dict[str, str | bool]:
     """
 
     question = _clean_question(question)
-    generated = _openai_reference(question)
+    try:
+        generated = _openai_reference(question)
+    except RuntimeError as error:
+        return {
+            "answer": _local_reference(question),
+            "source": "Local fallback",
+            "is_model_generated": False,
+            "warning": str(error),
+        }
     if generated:
         return {"answer": generated, "source": "OpenAI", "is_model_generated": True}
     return {

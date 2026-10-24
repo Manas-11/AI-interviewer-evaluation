@@ -209,6 +209,10 @@ with tab_single:
                 st.error(str(error))
             else:
                 st.session_state.generated_reference = str(generated["answer"])
+                if generated.get("warning"):
+                    st.warning(
+                        f"{generated['warning']} Using the local reference generator instead."
+                    )
                 st.success(f"Reference generated using {generated['source']}.")
                 st.rerun()
     with evaluate_clicked:
@@ -219,6 +223,10 @@ with tab_single:
                 generated = generate_reference_answer(question)
                 reference = generated["answer"]
                 st.session_state.generated_reference = reference
+                if generated.get("warning"):
+                    st.warning(
+                        f"{generated['warning']} Using the local reference generator instead."
+                    )
                 st.info(
                     f"Reference answer generated automatically using {generated['source']}."
                 )

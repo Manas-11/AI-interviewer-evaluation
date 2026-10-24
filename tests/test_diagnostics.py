@@ -78,3 +78,17 @@ def test_reference_answer_is_generated_without_credentials(monkeypatch):
     assert result["source"] == "Local fallback"
     assert "dependencies" in result["answer"]
     assert result["is_model_generated"] is False
+
+
+def test_reference_generation_falls_back_when_model_fails(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+
+    def fail_generation(question):
+        raise RuntimeError("The configured OpenAI model could not generate a reference answer.")
+
+    monkeypatch.setattr("engine.reference._openai_reference", fail_generation)
+    result = generate_reference_answer("What is caching?")
+    assert result["source"] == "Local fallback"
+    assert result["is_model_generated"] is False
+    assert "warning" in result
+    assert "caching" in result["answer"].lower()
