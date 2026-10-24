@@ -517,7 +517,9 @@ if should_evaluate:
         st.error(str(error))
     else:
         if result.get("evaluation_warning"):
-            st.warning(result["evaluation_warning"])
+            st.info(
+                f"{result['evaluation_warning']} The completed local result remains valid."
+            )
         st.markdown("### Evaluation snapshot")
         st.caption(f"Evaluation method: {result['evaluation_source']}")
         summary_title, summary_text = _performance_summary(result["percentage"])

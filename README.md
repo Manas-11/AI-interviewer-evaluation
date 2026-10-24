@@ -43,11 +43,11 @@ field empty and it will be generated automatically from the question before
 evaluation. Generated text remains editable so an interviewer can correct or
 extend the rubric.
 
-When `OPENAI_API_KEY` is available, evaluation uses semantic model grading to
-recognize accurate paraphrases and compare the candidate's meaning with the
-required concepts. Without a working key, the app clearly labels and uses its
-local meaning-aware evaluator, which includes phrase aliases, synonyms, and
-fuzzy concept matching, instead of failing.
+The local meaning-aware evaluator is always available and evaluates concept
+coverage using phrase aliases, synonyms, fuzzy matching, and reference-derived
+concept statements. When `OPENAI_API_KEY` is available, optional model grading
+can provide an additional semantic pass; an unavailable model never prevents
+the local evaluation from completing.
 
 After evaluation, the dashboard provides a plain-language performance summary,
 criterion-level deduction explanations, and concept evidence. Use **Start a

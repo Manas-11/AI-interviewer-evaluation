@@ -235,13 +235,15 @@ def evaluate_answer(
         if concept not in matched
     ]
 
-    concept_coverage = _overlap(candidate_tokens, reference_tokens)
+    concept_coverage = len(matched) / len(reference_concepts)
+    lexical_coverage = _overlap(candidate_tokens, reference_tokens)
+    concept_coverage = (concept_coverage * 0.75) + (lexical_coverage * 0.25)
     question_coverage = _overlap(candidate_tokens, question_tokens)
     has_structure = len(re.findall(r"[.!?]", candidate_answer)) > 0
     word_count = len(candidate_answer.split())
 
     correctness = _score(concept_coverage * 10)
-    relevance = _score((question_coverage * 0.65 + concept_coverage * 0.35) * 10)
+    relevance = _score((question_coverage * 0.45 + concept_coverage * 0.55) * 10)
     completeness = _score(concept_coverage * 10)
     clarity = _score(
         10 if word_count >= 8 and has_structure else
