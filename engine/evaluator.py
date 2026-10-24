@@ -11,6 +11,7 @@ import json
 import os
 import re
 from collections.abc import Iterable
+from difflib import SequenceMatcher
 from typing import Any
 
 _TOKEN_RE = re.compile(r"[A-Za-z0-9]+(?:[+#][A-Za-z0-9]+|[.-][A-Za-z0-9]+)*")
@@ -37,7 +38,36 @@ _SYNONYMS = {
     "faster": "latency",
     "speed": "latency",
     "retries": "retry",
+    "gets": "supply",
+    "getting": "supply",
+    "receives": "supply",
+    "receiving": "supply",
+    "needs": "dependency",
+    "needed": "dependency",
+    "objects": "dependency",
+    "object": "dependency",
+    "outside": "external",
+    "provider": "external",
+    "providers": "external",
+    "replaceable": "replace",
+    "replaced": "replace",
+    "replaceable": "replace",
+    "easier": "improve",
+    "improves": "improve",
+    "improved": "improve",
+    "testing": "testability",
+    "tested": "testability",
+    "quick": "latency",
+    "quickly": "latency",
 }
+_PHRASE_ALIASES = (
+    (r"\bgets?\s+what\s+it\s+needs\b", "supply dependency"),
+    (r"\bwhat\s+it\s+needs\b", "dependency"),
+    (r"\bfrom\s+an?\s+external\s+(?:provider|source)\b", "outside"),
+    (r"\bwithout\s+creating\s+(?:them|those\s+objects?)\s+(?:itself|internally)\b", "outside"),
+    (r"\bmake(?:s)?\s+it\s+easier\s+to\s+test\b", "improve testability"),
+    (r"\bmake(?:s)?\s+testing\s+easier\b", "improve testability"),
+)
 
 
 def _validate_text(value: str, name: str) -> str:
@@ -50,6 +80,8 @@ def _validate_text(value: str, name: str) -> str:
 
 
 def _tokens(text: str, *, include_stop_words: bool = False) -> set[str]:
+    for pattern, replacement in _PHRASE_ALIASES:
+        text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
     tokens = {match.group(0).lower() for match in _TOKEN_RE.finditer(text)}
     tokens = {_SYNONYMS.get(token, token) for token in tokens}
     if include_stop_words:
@@ -73,8 +105,14 @@ def _concept_is_supported(concept: str, candidate_tokens: set[str]) -> bool:
     concept_tokens = _tokens(concept)
     if not concept_tokens:
         return False
-    overlap = len(concept_tokens & candidate_tokens) / len(concept_tokens)
-    return overlap >= 0.6 or (overlap >= 0.5 and len(concept_tokens & candidate_tokens) >= 3)
+    exact_overlap = len(concept_tokens & candidate_tokens) / len(concept_tokens)
+    if exact_overlap >= 0.6 or (exact_overlap >= 0.5 and len(concept_tokens & candidate_tokens) >= 3):
+        return True
+    fuzzy_matches = sum(
+        any(SequenceMatcher(None, token, candidate).ratio() >= 0.78 for candidate in candidate_tokens)
+        for token in concept_tokens
+    )
+    return fuzzy_matches / len(concept_tokens) >= 0.6
 
 
 def _score(value: float) -> int:
@@ -175,7 +213,7 @@ def evaluate_answer(
             "maximum_score": 40,
             "percentage": 0.0,
             "feedback": ["No answer was provided."],
-            "evaluation_source": "Local deterministic evaluation",
+            "evaluation_source": "Local meaning-aware evaluation",
             "score_reasons": {
                 criterion: "No score awarded because no candidate answer was provided."
                 for criterion in _CRITERIA
@@ -224,7 +262,7 @@ def evaluate_answer(
         "maximum_score": 40,
         "percentage": round(total / 40 * 100, 1),
         "feedback": _feedback(scores, candidate_answer, reference_answer),
-        "evaluation_source": "Local deterministic evaluation",
+        "evaluation_source": "Local meaning-aware evaluation",
         "score_reasons": score_reasons,
         "matched_concepts": matched,
         "missing_concepts": missing,
@@ -305,7 +343,7 @@ def evaluate_answer_with_model(
         return result
     except (ImportError, APIError, KeyError, TypeError, ValueError, json.JSONDecodeError) as error:
         baseline["evaluation_warning"] = (
-            "Semantic model evaluation was unavailable, so the local deterministic "
+            "Semantic model evaluation was unavailable, so the local meaning-aware "
             "evaluation was used instead."
         )
         return baseline

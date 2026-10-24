@@ -56,7 +56,21 @@ def test_semantic_evaluator_uses_local_baseline_without_api_key(monkeypatch):
         "Caching stores reusable results to reduce latency.",
     )
     assert result == baseline
-    assert result["evaluation_source"] == "Local deterministic evaluation"
+    assert result["evaluation_source"] == "Local meaning-aware evaluation"
+
+
+def test_local_evaluator_recognizes_meaningful_paraphrase():
+    result = evaluate_answer(
+        "What is dependency injection?",
+        "A class gets what it needs from an external provider instead of creating "
+        "those objects internally, which makes testing easier.",
+        "Dependency injection supplies a class with its dependencies from outside. "
+        "This improves testability.",
+    )
+
+    assert len(result["matched_concepts"]) == 2
+    assert result["missing_concepts"] == []
+    assert result["scores"]["correctness"] >= 8
 
 
 def test_evidence_uses_concept_statements_and_supports_paraphrases():
