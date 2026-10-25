@@ -14,7 +14,7 @@ from collections.abc import Iterable
 from difflib import SequenceMatcher
 from typing import Any
 
-from engine.nvidia import model_name
+from engine.nvidia import nvidia_chat_completion
 _TOKEN_RE = re.compile(r"[A-Za-z0-9]+(?:[+#][A-Za-z0-9]+|[.-][A-Za-z0-9]+)*")
 _STOP_WORDS = {
     "a", "an", "and", "are", "as", "at", "be", "by", "for", "from",
@@ -350,15 +350,8 @@ def evaluate_answer_with_model(
     nvidia_key = os.getenv("NVIDIA_API_KEY")
     if nvidia_key and candidate_answer.strip():
         try:
-            from openai import APIError, OpenAI
-
-            response = OpenAI(
-                api_key=nvidia_key,
-                base_url="https://integrate.api.nvidia.com/v1",
-                timeout=12.0,
-                max_retries=0,
-            ).chat.completions.create(
-                model=model_name(),
+            response = nvidia_chat_completion(
+                nvidia_key,
                 messages=[{
                     "role": "user",
                     "content": _semantic_evaluation_prompt(
@@ -393,7 +386,7 @@ def evaluate_answer_with_model(
                     or baseline["feedback"],
                 "evaluation_source": "NVIDIA semantic evaluation",
             }
-        except (ImportError, APIError, IndexError, AttributeError, KeyError, TypeError,
+        except (ImportError, IndexError, AttributeError, KeyError, TypeError, RuntimeError,
                 ValueError, json.JSONDecodeError) as error:
             baseline["evaluation_warning"] = (
                 f"NVIDIA semantic evaluation was unavailable ({error}); "

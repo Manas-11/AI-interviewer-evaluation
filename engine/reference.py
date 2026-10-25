@@ -6,7 +6,7 @@ import os
 import re
 from typing import Any
 
-from engine.nvidia import model_name
+from engine.nvidia import nvidia_chat_completion
 
 def _clean_question(question: str) -> str:
     if not isinstance(question, str) or not question.strip():
@@ -97,15 +97,8 @@ def _nvidia_reference(question: str) -> str | None:
     if not api_key:
         return None
     try:
-        from openai import APIError, OpenAI
-
-        response: Any = OpenAI(
-            api_key=api_key,
-            base_url="https://integrate.api.nvidia.com/v1",
-            timeout=12.0,
-            max_retries=0,
-        ).chat.completions.create(
-            model=model_name(),
+        response: Any = nvidia_chat_completion(
+            api_key,
             messages=[{
                 "role": "user",
                 "content": (
@@ -119,7 +112,7 @@ def _nvidia_reference(question: str) -> str | None:
         )
         answer = response.choices[0].message.content.strip()
         return answer or None
-    except (ImportError, APIError, IndexError, AttributeError, TypeError, ValueError) as error:
+    except (ImportError, IndexError, AttributeError, TypeError, ValueError, RuntimeError) as error:
         raise RuntimeError(
             "NVIDIA reference generation failed. Check NVIDIA_API_KEY, "
             "NVIDIA_MODEL, and NVIDIA API credits."
