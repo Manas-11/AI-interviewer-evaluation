@@ -34,7 +34,7 @@ To enable model-generated reference answers and semantic grading with NVIDIA:
 
 ```powershell
 $env:NVIDIA_API_KEY = "your-nvidia-api-key"
-$env:NVIDIA_MODEL = "meta/llama-3.3-70b-instruct"
+$env:NVIDIA_MODEL = "meta/llama-4-scout-17b-16e-instruct"
 ```
 
 For Streamlit Community Cloud, open **App settings → Secrets** and add TOML
@@ -42,12 +42,14 @@ entries (do not commit this value to the repository):
 
 ```toml
 NVIDIA_API_KEY = "your-nvidia-api-key"
-NVIDIA_MODEL = "meta/llama-3.3-70b-instruct"
+NVIDIA_MODEL = "meta/llama-4-scout-17b-16e-instruct"
 ```
 
 After saving the secrets, restart the app. The dashboard will show
 `Semantic model grading is configured` when the key is being loaded. A valid NVIDIA API key with available credits is required. NVIDIA NIM is
 OpenAI-compatible, but it uses the NVIDIA endpoint and model IDs.
+The retired `meta/llama-3.3-70b-instruct` ID is automatically replaced with
+`meta/llama-4-scout-17b-16e-instruct`.
 
 The candidate answer can remain manually entered. Leave the reference-answer
 field empty and it will be generated automatically from the question before

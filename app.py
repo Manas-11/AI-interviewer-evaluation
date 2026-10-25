@@ -9,6 +9,7 @@ import altair as alt
 import streamlit as st
 from streamlit.errors import StreamlitSecretNotFoundError
 
+from engine.nvidia import DEFAULT_MODEL, model_name
 from engine.evaluator import evaluate_answer_with_model
 from engine.reference import generate_reference_answer
 
@@ -475,7 +476,7 @@ st.markdown(
 if model_configured:
     st.caption(
         "Semantic model grading is configured "
-        f"({os.getenv('NVIDIA_MODEL', os.getenv('OPENAI_MODEL', 'meta/llama-3.3-70b-instruct'))})."
+        f"({model_name() if os.getenv('NVIDIA_API_KEY') else os.getenv('OPENAI_MODEL', DEFAULT_MODEL)})."
     )
 else:
     st.info(

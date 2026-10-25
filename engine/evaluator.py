@@ -14,6 +14,7 @@ from collections.abc import Iterable
 from difflib import SequenceMatcher
 from typing import Any
 
+from engine.nvidia import model_name
 _TOKEN_RE = re.compile(r"[A-Za-z0-9]+(?:[+#][A-Za-z0-9]+|[.-][A-Za-z0-9]+)*")
 _STOP_WORDS = {
     "a", "an", "and", "are", "as", "at", "be", "by", "for", "from",
@@ -357,7 +358,7 @@ def evaluate_answer_with_model(
                 timeout=12.0,
                 max_retries=0,
             ).chat.completions.create(
-                model=os.getenv("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct"),
+                model=model_name(),
                 messages=[{
                     "role": "user",
                     "content": _semantic_evaluation_prompt(

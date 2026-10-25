@@ -6,6 +6,7 @@ import os
 import re
 from typing import Any
 
+from engine.nvidia import model_name
 
 def _clean_question(question: str) -> str:
     if not isinstance(question, str) or not question.strip():
@@ -104,7 +105,7 @@ def _nvidia_reference(question: str) -> str | None:
             timeout=12.0,
             max_retries=0,
         ).chat.completions.create(
-            model=os.getenv("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct"),
+            model=model_name(),
             messages=[{
                 "role": "user",
                 "content": (
