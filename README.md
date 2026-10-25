@@ -43,6 +43,7 @@ entries (do not commit this value to the repository):
 ```toml
 NVIDIA_API_KEY = "your-nvidia-api-key"
 NVIDIA_MODEL = "meta/llama-4-scout-17b-16e-instruct"
+NVIDIA_TIMEOUT = "60"
 ```
 
 After saving the secrets, restart the app. The dashboard will show
@@ -60,6 +61,8 @@ The local meaning-aware evaluator is always available and evaluates concept
 coverage using phrase aliases, synonyms, fuzzy matching, and reference-derived
 concept statements. NVIDIA provides the primary semantic pass, OpenAI is optional, and an
 unavailable hosted model never prevents local evaluation from completing.
+NVIDIA requests allow up to 60 seconds by default because hosted models can
+have a cold start. Set `NVIDIA_TIMEOUT` between 15 and 120 seconds if needed.
 
 After evaluation, the dashboard provides a plain-language performance summary,
 criterion-level deduction explanations, and concept evidence. Use **Start a

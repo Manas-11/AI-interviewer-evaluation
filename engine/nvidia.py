@@ -14,6 +14,7 @@ from openai import (
 )
 
 DEFAULT_MODEL = "meta/llama-4-scout-17b-16e-instruct"
+DEFAULT_REQUEST_TIMEOUT = 60.0
 RETIRED_MODELS = {"meta/llama-3.3-70b-instruct"}
 FALLBACK_MODELS = (
     "meta/llama-3.1-8b-instruct",
@@ -27,6 +28,13 @@ def model_name() -> str:
     if configured in RETIRED_MODELS or not configured:
         return DEFAULT_MODEL
     return configured
+
+
+def request_timeout() -> float:
+    try:
+        return max(15.0, min(float(os.getenv("NVIDIA_TIMEOUT", DEFAULT_REQUEST_TIMEOUT)), 120.0))
+    except ValueError:
+        return DEFAULT_REQUEST_TIMEOUT
 
 
 @lru_cache(maxsize=4)
@@ -63,7 +71,7 @@ def nvidia_chat_completion(api_key: str, **kwargs):
             client = OpenAI(
                 api_key=api_key,
                 base_url="https://integrate.api.nvidia.com/v1",
-                timeout=12.0,
+                timeout=request_timeout(),
                 max_retries=0,
             )
             return client.chat.completions.create(model=model, **kwargs)
