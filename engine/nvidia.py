@@ -5,7 +5,13 @@ from __future__ import annotations
 import os
 from functools import lru_cache
 
-from openai import APIError, OpenAI
+from openai import (
+    APIConnectionError,
+    APIError,
+    APITimeoutError,
+    OpenAI,
+    RateLimitError,
+)
 
 DEFAULT_MODEL = "meta/llama-4-scout-17b-16e-instruct"
 RETIRED_MODELS = {"meta/llama-3.3-70b-instruct"}
@@ -38,7 +44,7 @@ def model_candidates(api_key: str) -> tuple[str, ...]:
             item.id for item in client.models.list().data
             if item.id not in RETIRED_MODELS
         ]
-    except (APIError, OSError, TypeError, ValueError):
+    except (APIConnectionError, APITimeoutError, APIError, OSError, TypeError, ValueError):
         discovered = []
     preferred = [configured, *FALLBACK_MODELS]
     candidates = list(dict.fromkeys(
@@ -61,11 +67,18 @@ def nvidia_chat_completion(api_key: str, **kwargs):
                 max_retries=0,
             )
             return client.chat.completions.create(model=model, **kwargs)
-        except APIError as error:
+        except (
+            APIConnectionError,
+            APITimeoutError,
+            APIError,
+            OSError,
+            TypeError,
+            ValueError,
+        ) as error:
             last_error = error
             if getattr(error, "status_code", None) not in (404, 410):
                 raise RuntimeError(
-                    "NVIDIA request failed before a response was received. "
+                    "NVIDIA request failed or timed out. "
                     "The local meaning-aware evaluation was used instead."
                 ) from error
     raise RuntimeError(
