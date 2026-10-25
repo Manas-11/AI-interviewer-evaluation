@@ -386,8 +386,7 @@ def evaluate_answer_with_model(
                     or baseline["feedback"],
                 "evaluation_source": "NVIDIA semantic evaluation",
             }
-        except (ImportError, IndexError, AttributeError, KeyError, TypeError, RuntimeError,
-                ValueError, json.JSONDecodeError) as error:
+        except Exception as error:
             baseline["evaluation_warning"] = (
                 f"NVIDIA semantic evaluation was unavailable ({error}); "
                 "the local meaning-aware evaluation was used instead."

@@ -67,18 +67,11 @@ def nvidia_chat_completion(api_key: str, **kwargs):
                 max_retries=0,
             )
             return client.chat.completions.create(model=model, **kwargs)
-        except (
-            APIConnectionError,
-            APITimeoutError,
-            APIError,
-            OSError,
-            TypeError,
-            ValueError,
-        ) as error:
+        except Exception as error:
             last_error = error
             if getattr(error, "status_code", None) not in (404, 410):
                 raise RuntimeError(
-                    "NVIDIA request failed or timed out. "
+                    "NVIDIA request failed or timed out after a short limit. "
                     "The local meaning-aware evaluation was used instead."
                 ) from error
     raise RuntimeError(
