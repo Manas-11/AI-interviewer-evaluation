@@ -62,9 +62,12 @@ _SYNONYMS = {
 }
 _PHRASE_ALIASES = (
     (r"\bgets?\s+what\s+it\s+needs\b", "supply dependency"),
+    (r"\breceives?\s+(?:the\s+)?objects?\s+it\s+needs\b", "supply dependency"),
     (r"\bwhat\s+it\s+needs\b", "dependency"),
     (r"\bfrom\s+an?\s+external\s+(?:provider|source)\b", "outside"),
+    (r"\bfrom\s+another\s+(?:component|class|service)\b", "outside"),
     (r"\bwithout\s+creating\s+(?:them|those\s+objects?)\s+(?:itself|internally)\b", "outside"),
+    (r"\binstead\s+of\s+creating\s+(?:them|those\s+objects?)\s+(?:itself|internally)\b", "outside"),
     (r"\bmake(?:s)?\s+it\s+easier\s+to\s+test\b", "improve testability"),
     (r"\bmake(?:s)?\s+testing\s+easier\b", "improve testability"),
 )
@@ -105,6 +108,13 @@ def _concept_is_supported(concept: str, candidate_tokens: set[str]) -> bool:
     concept_tokens = _tokens(concept)
     if not concept_tokens:
         return False
+    overlap = concept_tokens & candidate_tokens
+    if len(overlap) >= 3:
+        return True
+    if {"dependency", "external"} <= overlap:
+        return True
+    if {"improve", "testability"} <= overlap:
+        return True
     exact_overlap = len(concept_tokens & candidate_tokens) / len(concept_tokens)
     if exact_overlap >= 0.6 or (exact_overlap >= 0.5 and len(concept_tokens & candidate_tokens) >= 3):
         return True
@@ -307,6 +317,22 @@ def _semantic_evaluation_prompt(
     )
 
 
+def _parse_model_json(raw: str) -> dict[str, Any]:
+    cleaned = raw.strip()
+    if "```" in cleaned:
+        cleaned = cleaned.replace("```json", "").replace("```", "").strip()
+    try:
+        parsed = json.loads(cleaned)
+    except json.JSONDecodeError:
+        start, end = cleaned.find("{"), cleaned.rfind("}")
+        if start < 0 or end <= start:
+            raise
+        parsed = json.loads(cleaned[start:end + 1])
+    if not isinstance(parsed, dict):
+        raise ValueError("Hosted model returned a non-object JSON response.")
+    return parsed
+
+
 def evaluate_answer_with_model(
     question: str,
     candidate_answer: str,
@@ -341,7 +367,7 @@ def evaluate_answer_with_model(
                 temperature=0.1,
                 max_tokens=700,
             )
-            parsed = json.loads(response.choices[0].message.content)
+            parsed = _parse_model_json(response.choices[0].message.content or "")
             scores = parsed["scores"]
             if set(scores) != set(_CRITERIA) or any(
                 not isinstance(scores[key], int) or not 0 <= scores[key] <= 10
