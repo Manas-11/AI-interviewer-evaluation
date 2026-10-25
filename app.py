@@ -15,11 +15,21 @@ from engine.reference import generate_reference_answer
 st.set_page_config(page_title="Interview Evaluator", layout="wide")
 
 
-def _load_openai_settings() -> bool:
+def _load_model_settings() -> bool:
     """Load hosted-model settings from Streamlit secrets without exposing keys."""
 
-    if os.getenv("OPENAI_API_KEY"):
+    if os.getenv("NVIDIA_API_KEY") or os.getenv("OPENAI_API_KEY"):
         return True
+    try:
+        secret_key = st.secrets.get("NVIDIA_API_KEY")
+        if secret_key:
+            os.environ["NVIDIA_API_KEY"] = str(secret_key).strip()
+            secret_model = st.secrets.get("NVIDIA_MODEL")
+            if secret_model:
+                os.environ["NVIDIA_MODEL"] = str(secret_model).strip()
+            return True
+    except StreamlitSecretNotFoundError:
+        pass
     try:
         secret_key = st.secrets.get("OPENAI_API_KEY")
         if secret_key:
@@ -29,11 +39,11 @@ def _load_openai_settings() -> bool:
                 os.environ["OPENAI_MODEL"] = str(secret_model).strip()
             return True
     except StreamlitSecretNotFoundError:
-        return False
+        pass
     return False
 
 
-model_configured = _load_openai_settings()
+model_configured = _load_model_settings()
 
 
 def _performance_summary(percentage: float) -> tuple[str, str]:
@@ -465,11 +475,11 @@ st.markdown(
 if model_configured:
     st.caption(
         "Semantic model grading is configured "
-        f"({os.getenv('OPENAI_MODEL', 'gpt-4o-mini')})."
+        f"({os.getenv('NVIDIA_MODEL', os.getenv('OPENAI_MODEL', 'meta/llama-3.3-70b-instruct'))})."
     )
 else:
     st.info(
-        "Semantic model grading is not configured. Add OPENAI_API_KEY to "
+        "Semantic model grading is not configured. Add NVIDIA_API_KEY to "
         "Streamlit Secrets; local meaning-aware grading remains available."
     )
 

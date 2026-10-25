@@ -4,8 +4,8 @@ A deployable Streamlit application for evaluating interview answers with a
 transparent, deterministic scoring baseline. It validates transcript data with
 Pydantic and scores answers across correctness, relevance, completeness, and
 clarity (0–10 each), while exposing matched and missing concepts as evidence.
-Reference answers are generated automatically from the question. If `OPENAI_API_KEY` is configured, the app uses OpenAI; otherwise it uses a
-deterministic local fallback.
+Reference answers are generated automatically from the question. If `NVIDIA_API_KEY` is configured, the app uses NVIDIA NIM; OpenAI remains a
+secondary compatible provider, and the local evaluator is always available.
 
 The dashboard is focused on the primary workflow: evaluating one question and
 one candidate answer at a time. Transcript validation remains available in the
@@ -30,24 +30,24 @@ streamlit run app.py
 
 Open the URL printed by Streamlit, then use **Evaluate an answer**.
 
-To enable model-generated reference answers and semantic grading with OpenAI:
+To enable model-generated reference answers and semantic grading with NVIDIA:
 
 ```powershell
-$env:OPENAI_API_KEY = "your-openai-api-key"
-$env:OPENAI_MODEL = "gpt-4o-mini"
+$env:NVIDIA_API_KEY = "your-nvidia-api-key"
+$env:NVIDIA_MODEL = "meta/llama-3.3-70b-instruct"
 ```
 
 For Streamlit Community Cloud, open **App settings → Secrets** and add TOML
 entries (do not commit this value to the repository):
 
 ```toml
-OPENAI_API_KEY = "your-openai-api-key"
-OPENAI_MODEL = "gpt-4o-mini"
+NVIDIA_API_KEY = "your-nvidia-api-key"
+NVIDIA_MODEL = "meta/llama-3.3-70b-instruct"
 ```
 
 After saving the secrets, restart the app. The dashboard will show
-`Semantic model grading is configured` when the key is being loaded. A valid OpenAI API key with API access is required. ChatGPT access and OpenAI
-API access are separate.
+`Semantic model grading is configured` when the key is being loaded. A valid NVIDIA API key with available credits is required. NVIDIA NIM is
+OpenAI-compatible, but it uses the NVIDIA endpoint and model IDs.
 
 The candidate answer can remain manually entered. Leave the reference-answer
 field empty and it will be generated automatically from the question before
@@ -56,8 +56,8 @@ extend the rubric.
 
 The local meaning-aware evaluator is always available and evaluates concept
 coverage using phrase aliases, synonyms, fuzzy matching, and reference-derived
-concept statements. OpenAI provides the semantic pass, and an unavailable hosted model never
-prevents local evaluation from completing.
+concept statements. NVIDIA provides the primary semantic pass, OpenAI is optional, and an
+unavailable hosted model never prevents local evaluation from completing.
 
 After evaluation, the dashboard provides a plain-language performance summary,
 criterion-level deduction explanations, and concept evidence. Use **Start a

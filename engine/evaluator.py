@@ -320,6 +320,59 @@ def evaluate_answer_with_model(
     """
 
     baseline = evaluate_answer(question, candidate_answer, reference_answer)
+    nvidia_key = os.getenv("NVIDIA_API_KEY")
+    if nvidia_key and candidate_answer.strip():
+        try:
+            from openai import APIError, OpenAI
+
+            response = OpenAI(
+                api_key=nvidia_key,
+                base_url="https://integrate.api.nvidia.com/v1",
+                timeout=12.0,
+                max_retries=0,
+            ).chat.completions.create(
+                model=os.getenv("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct"),
+                messages=[{
+                    "role": "user",
+                    "content": _semantic_evaluation_prompt(
+                        question, candidate_answer, reference_answer
+                    ),
+                }],
+                temperature=0.1,
+                max_tokens=700,
+            )
+            parsed = json.loads(response.choices[0].message.content)
+            scores = parsed["scores"]
+            if set(scores) != set(_CRITERIA) or any(
+                not isinstance(scores[key], int) or not 0 <= scores[key] <= 10
+                for key in _CRITERIA
+            ):
+                raise ValueError("NVIDIA returned invalid scores.")
+            total = sum(scores.values())
+            return {
+                **baseline,
+                "scores": scores,
+                "total_score": total,
+                "percentage": round(total / 40 * 100, 1),
+                "matched_concepts": [x for x in parsed.get("matched_concepts", []) if isinstance(x, str)],
+                "missing_concepts": [x for x in parsed.get("missing_concepts", []) if isinstance(x, str)],
+                "score_reasons": {
+                    criterion: str(parsed.get("score_reasons", {}).get(
+                        criterion, baseline["score_reasons"][criterion]
+                    ))
+                    for criterion in _CRITERIA
+                },
+                "feedback": [x for x in parsed.get("feedback", []) if isinstance(x, str)]
+                    or baseline["feedback"],
+                "evaluation_source": "NVIDIA semantic evaluation",
+            }
+        except (ImportError, APIError, IndexError, AttributeError, KeyError, TypeError,
+                ValueError, json.JSONDecodeError) as error:
+            baseline["evaluation_warning"] = (
+                f"NVIDIA semantic evaluation was unavailable ({error}); "
+                "the local meaning-aware evaluation was used instead."
+            )
+            return baseline
     api_key = os.getenv("OPENAI_API_KEY")
     if api_key and candidate_answer.strip():
         try:

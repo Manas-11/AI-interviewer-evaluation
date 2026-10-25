@@ -91,6 +91,40 @@ def _openai_reference(question: str) -> str | None:
         ) from error
 
 
+def _nvidia_reference(question: str) -> str | None:
+    api_key = os.getenv("NVIDIA_API_KEY")
+    if not api_key:
+        return None
+    try:
+        from openai import APIError, OpenAI
+
+        response: Any = OpenAI(
+            api_key=api_key,
+            base_url="https://integrate.api.nvidia.com/v1",
+            timeout=12.0,
+            max_retries=0,
+        ).chat.completions.create(
+            model=os.getenv("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct"),
+            messages=[{
+                "role": "user",
+                "content": (
+                    "Create a concise, technically accurate reference answer for "
+                    "an interview evaluator. Include essential concepts, trade-offs, "
+                    f"and an example when relevant. Question: {question}"
+                ),
+            }],
+            temperature=0.2,
+            max_tokens=300,
+        )
+        answer = response.choices[0].message.content.strip()
+        return answer or None
+    except (ImportError, APIError, IndexError, AttributeError, TypeError, ValueError) as error:
+        raise RuntimeError(
+            "NVIDIA reference generation failed. Check NVIDIA_API_KEY, "
+            "NVIDIA_MODEL, and NVIDIA API credits."
+        ) from error
+
+
 def generate_reference_answer(question: str) -> dict[str, str | bool]:
     """Generate a reference answer from a question.
 
@@ -100,6 +134,17 @@ def generate_reference_answer(question: str) -> dict[str, str | bool]:
     """
 
     question = _clean_question(question)
+    if os.getenv("NVIDIA_API_KEY"):
+        try:
+            answer = _nvidia_reference(question)
+            if answer:
+                return {"answer": answer, "source": "NVIDIA", "is_model_generated": True}
+        except RuntimeError as error:
+            nvidia_warning = str(error)
+        else:
+            nvidia_warning = "NVIDIA returned an empty answer."
+    else:
+        nvidia_warning = ""
     if os.getenv("OPENAI_API_KEY"):
         try:
             answer = _openai_reference(question)
@@ -111,12 +156,15 @@ def generate_reference_answer(question: str) -> dict[str, str | bool]:
             openai_warning = "OpenAI returned an empty answer."
     else:
         openai_warning = ""
-    warning = f"OpenAI unavailable: {openai_warning}" if openai_warning else ""
+    warning_parts = [part for part in (
+        f"NVIDIA unavailable: {nvidia_warning}" if nvidia_warning else "",
+        f"OpenAI unavailable: {openai_warning}" if openai_warning else "",
+    ) if part]
     fallback = {
         "answer": _local_reference(question),
         "source": "Local fallback",
         "is_model_generated": False,
     }
-    if warning:
-        fallback["warning"] = warning
+    if warning_parts:
+        fallback["warning"] = "; ".join(warning_parts)
     return fallback
