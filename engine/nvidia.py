@@ -64,7 +64,10 @@ def nvidia_chat_completion(api_key: str, **kwargs):
         except APIError as error:
             last_error = error
             if getattr(error, "status_code", None) not in (404, 410):
-                raise
+                raise RuntimeError(
+                    "NVIDIA request failed before a response was received. "
+                    "The local meaning-aware evaluation was used instead."
+                ) from error
     raise RuntimeError(
         "NVIDIA has no available model for this API key. "
         "Update NVIDIA_MODEL to an active model in the NVIDIA catalog."
