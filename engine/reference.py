@@ -108,7 +108,7 @@ def _nvidia_reference(question: str) -> str | None:
                 ),
             }],
             temperature=0.2,
-            max_tokens=300,
+            max_tokens=220,
         )
         answer = response.choices[0].message.content.strip()
         return answer or None

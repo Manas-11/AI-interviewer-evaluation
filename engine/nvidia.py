@@ -13,7 +13,7 @@ from openai import (
     RateLimitError,
 )
 
-DEFAULT_MODEL = "meta/llama-4-scout-17b-16e-instruct"
+DEFAULT_MODEL = "meta/llama-3.1-8b-instruct"
 DEFAULT_REQUEST_TIMEOUT = 60.0
 RETIRED_MODELS = {"meta/llama-3.3-70b-instruct"}
 FALLBACK_MODELS = (

@@ -359,7 +359,7 @@ def evaluate_answer_with_model(
                     ),
                 }],
                 temperature=0.1,
-                max_tokens=700,
+                max_tokens=450,
             )
             parsed = _parse_model_json(response.choices[0].message.content or "")
             scores = parsed["scores"]

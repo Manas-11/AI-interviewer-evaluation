@@ -42,7 +42,7 @@ entries (do not commit this value to the repository):
 
 ```toml
 NVIDIA_API_KEY = "your-nvidia-api-key"
-NVIDIA_MODEL = "meta/llama-4-scout-17b-16e-instruct"
+NVIDIA_MODEL = "meta/llama-3.1-8b-instruct"
 NVIDIA_TIMEOUT = "60"
 ```
 
